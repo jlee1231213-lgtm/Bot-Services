@@ -3,6 +3,7 @@ const STORAGE_KEY = "logic-systems-dashboard";
 const PADDLE_CLIENT_TOKEN = "live_dc4683003cbffc6a174bbe866a3";
 const PADDLE_PRICE_ID = "pri_01ks9d2ry6by4xvfrjf0xad17t";
 const PADDLE_ENVIRONMENT = "production";
+const BACKEND_URL = "YOUR_BACKEND_URL";
 
 const inviteUrl =
   BOT_CLIENT_ID === "YOUR_BOT_CLIENT_ID"
@@ -61,6 +62,7 @@ const previewColor = document.querySelector("#previewColor");
 const previewTitle = document.querySelector("#previewTitle");
 const previewMessage = document.querySelector("#previewMessage");
 const previewFooter = document.querySelector("#previewFooter");
+let loggedInGuilds = [];
 
 function loadState() {
   try {
@@ -267,7 +269,123 @@ form.addEventListener("submit", (event) => {
   event.preventDefault();
   collectForm();
   saveState();
-  alert("Dashboard settings saved in this browser.");
+  saveDashboardSettings();
 });
 
 renderDashboard();
+initDiscordDashboard();
+
+async function initDiscordDashboard() {
+  const dashboardHead = document.querySelector(".dashboard-head");
+  const loginButton = document.createElement("button");
+  loginButton.className = "btn secondary discord-login";
+  loginButton.type = "button";
+  loginButton.textContent = "Sign in with Discord";
+  loginButton.addEventListener("click", () => {
+    if (BACKEND_URL === "YOUR_BACKEND_URL") {
+      alert("Add your hosted backend URL in script.js first.");
+      return;
+    }
+    window.location.href = `${BACKEND_URL}/auth/discord`;
+  });
+  dashboardHead.append(loginButton);
+
+  if (BACKEND_URL === "YOUR_BACKEND_URL") return;
+
+  try {
+    const me = await apiGet("/api/me");
+    loginButton.textContent = `Signed in: ${me.user.globalName || me.user.username}`;
+
+    const { guilds } = await apiGet("/api/guilds");
+    loggedInGuilds = guilds;
+    renderLoggedInGuilds(guilds);
+  } catch {
+    loginButton.textContent = "Sign in with Discord";
+  }
+}
+
+function renderLoggedInGuilds(guilds) {
+  const panel = document.querySelector(".server-panel");
+  panel.querySelectorAll(".server-card[data-discord-guild]").forEach((card) => card.remove());
+
+  guilds.forEach((guild) => {
+    const card = document.createElement("button");
+    card.className = "server-card";
+    card.type = "button";
+    card.dataset.server = guild.id;
+    card.dataset.discordGuild = "true";
+    card.innerHTML = `<span>${guild.name}</span><small>${guild.premium ? "Premium plan" : "Free plan"}</small>`;
+    card.addEventListener("click", async () => {
+      selectedServer = guild.id;
+      document.querySelectorAll(".server-card").forEach((item) => item.classList.toggle("active", item === card));
+      await loadGuildSettings(guild);
+    });
+    panel.append(card);
+  });
+}
+
+async function loadGuildSettings(guild) {
+  const { premium, settings } = await apiGet(`/api/guilds/${guild.id}/settings`);
+  state[guild.id] = {
+    serverName: guild.name,
+    plan: premium ? "premium" : "free",
+    botName: guild.name,
+    guildId: guild.id,
+    prefix: "/",
+    embedTitle: settings.embedTitle,
+    embedMessage: settings.embedMessage,
+    embedColor: settings.embedColor,
+    footerText: settings.footerText,
+    customEmbeds: Boolean(settings.customEmbeds),
+    embedBuilder: premium,
+    antiRaid: premium,
+  };
+  saveState();
+  renderDashboard();
+}
+
+async function saveDashboardSettings() {
+  const bot = currentBot();
+  if (BACKEND_URL === "YOUR_BACKEND_URL" || !loggedInGuilds.some((guild) => guild.id === bot.guildId)) {
+    alert("Dashboard settings saved in this browser. Sign in with Discord to save them to the bot.");
+    saveState();
+    return;
+  }
+
+  try {
+    const result = await apiPut(`/api/guilds/${bot.guildId}/settings`, {
+      embedTitle: bot.embedTitle,
+      embedMessage: bot.embedMessage,
+      embedColor: bot.embedColor,
+      footerText: bot.footerText,
+      customEmbeds: bot.customEmbeds,
+    });
+    Object.assign(bot, result.settings);
+    saveState();
+    updatePreview();
+    alert("Embed settings saved to the bot.");
+  } catch (error) {
+    alert(error.message || "Could not save settings.");
+  }
+}
+
+async function apiGet(path) {
+  const response = await fetch(`${BACKEND_URL}${path}`, { credentials: "include" });
+  return parseApiResponse(response);
+}
+
+async function apiPut(path, body) {
+  const response = await fetch(`${BACKEND_URL}${path}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return parseApiResponse(response);
+}
+
+async function parseApiResponse(response) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Request failed.");
+  return data;
+}

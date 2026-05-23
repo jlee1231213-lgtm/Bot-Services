@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
+    "start:bot": "node src/start-bot.js",
+    "start:web": "node src/start-web.js",
     "deploy:commands": "node src/deploy-commands.js"
   },
   "dependencies": {

@@ -1,5 +1,5 @@
 import { Client, EmbedBuilder, GatewayIntentBits } from "discord.js";
-import { isPremiumGuild } from "./store.js";
+import { getGuildSettings, isPremiumGuild } from "./store.js";
 
 const brandColor = 0x3c43ec;
 
@@ -16,16 +16,16 @@ export function createBot() {
     if (!interaction.isChatInputCommand()) return;
 
     const handlers = {
-      startup: () => standardEmbed("Session Startup", "A new roleplay session is starting. Join up and follow the server rules."),
-      ea: () => standardEmbed("Early Access", "Early access is now open for approved members."),
-      setup: () => standardEmbed("Setup", "Use Logic Systems commands for startup, EA, release, reinvites, and session over messages."),
-      release: () => standardEmbed("Release", "The roleplay session has been released. Have fun and follow the rules."),
-      reinvites: () => standardEmbed("Reinvites", "Reinvites are open. Use the server instructions to rejoin."),
-      over: () => standardEmbed("Session Over", "The roleplay session is now over. Thanks for joining."),
+      startup: () => standardEmbed(interaction.guildId, "Session Startup", "A new roleplay session is starting. Join up and follow the server rules."),
+      ea: () => standardEmbed(interaction.guildId, "Early Access", "Early access is now open for approved members."),
+      setup: () => standardEmbed(interaction.guildId, "Setup", "Use Logic Systems commands for startup, EA, release, reinvites, and session over messages."),
+      release: () => standardEmbed(interaction.guildId, "Release", "The roleplay session has been released. Have fun and follow the rules."),
+      reinvites: () => standardEmbed(interaction.guildId, "Reinvites", "Reinvites are open. Use the server instructions to rejoin."),
+      over: () => standardEmbed(interaction.guildId, "Session Over", "The roleplay session is now over. Thanks for joining."),
     };
 
     if (handlers[interaction.commandName]) {
-      await interaction.reply({ embeds: [handlers[interaction.commandName]()] });
+      await interaction.reply({ embeds: [await handlers[interaction.commandName]()] });
       return;
     }
 
@@ -61,18 +61,22 @@ export function createBot() {
         ],
         ephemeral: true,
       });
+      return;
     }
   });
 
   return client;
 }
 
-function standardEmbed(title, description) {
+async function standardEmbed(guildId, title, description) {
+  const hasPremium = await isPremiumGuild(guildId);
+  const settings = hasPremium ? await getGuildSettings(guildId) : null;
+
   return new EmbedBuilder()
-    .setColor(brandColor)
-    .setTitle(title)
-    .setDescription(description)
-    .setFooter({ text: "Powered by Logic Systems" });
+    .setColor(parseHexColor(settings?.embedColor) ?? brandColor)
+    .setTitle(settings?.customEmbeds ? settings.embedTitle : title)
+    .setDescription(settings?.customEmbeds ? settings.embedMessage : description)
+    .setFooter({ text: hasPremium ? (settings?.footerText ?? "Logic Systems Premium") : "Powered by Logic Systems" });
 }
 
 async function ensurePremium(interaction) {
