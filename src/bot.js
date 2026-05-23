@@ -78,18 +78,15 @@ export function createBot() {
 
     if (interaction.commandName === "vote") {
       const question = interaction.options.getString("question") ?? "Start a roleplay session?";
-      const reply = await interaction.reply({
+      await interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setColor(brandColor)
             .setTitle("Session Vote")
             .setDescription(question)
-            .setFooter({ text: "React below to vote" }),
+            .setFooter({ text: "Use this as a session vote prompt" }),
         ],
-        fetchReply: true,
       });
-      await reply.react("✅");
-      await reply.react("❌");
       return;
     }
 
