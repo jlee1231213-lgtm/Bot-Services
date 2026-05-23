@@ -101,7 +101,10 @@ export function createServer() {
       response.redirect(`${siteUrl}/#dashboard`);
     } catch (error) {
       console.error("Discord OAuth failed", error);
-      response.status(500).send("Discord login failed.");
+      response
+        .status(500)
+        .type("html")
+        .send(`<h1>Discord login failed</h1><pre>${escapeHtml(error.message)}</pre>`);
     }
   });
 
@@ -321,6 +324,15 @@ function canManageGuild(guild) {
   const manageGuild = 0x20n;
   const administrator = 0x8n;
   return guild.owner || (permissions & manageGuild) === manageGuild || (permissions & administrator) === administrator;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 const premiumActiveEvents = new Set([
