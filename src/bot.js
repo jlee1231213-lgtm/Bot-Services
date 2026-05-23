@@ -15,23 +15,37 @@ export function createBot() {
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    const handlers = {
-      startup: () => standardEmbed(interaction.guildId, "Session Startup", "A new roleplay session is starting. Join up and follow the server rules."),
-      ea: () => standardEmbed(interaction.guildId, "Early Access", "Early access is now open for approved members."),
-      setup: () => standardEmbed(interaction.guildId, "Setup", "Use Logic Systems commands for startup, EA, release, reinvites, and session over messages."),
-      release: () => standardEmbed(interaction.guildId, "Release", "The roleplay session has been released. Have fun and follow the rules."),
-      reinvites: () => standardEmbed(interaction.guildId, "Reinvites", "Reinvites are open. Use the server instructions to rejoin."),
-      over: () => standardEmbed(interaction.guildId, "Session Over", "The roleplay session is now over. Thanks for joining."),
-      rules: () => standardEmbed(interaction.guildId, "Roleplay Rules", "Follow staff instructions, stay in character, avoid fail roleplay, and keep the session fair for everyone."),
-      ssu: () => standardEmbed(interaction.guildId, "Server Startup", interaction.options.getString("notes") ?? "Server startup is now active. Join up and prepare for roleplay."),
-    };
+    console.log(`Command received: /${interaction.commandName} in guild ${interaction.guildId}`);
 
-    if (handlers[interaction.commandName]) {
-      await interaction.reply({ embeds: [await handlers[interaction.commandName]()] });
-      return;
+    try {
+      const handlers = {
+        startup: () => standardEmbed(interaction.guildId, "Session Startup", "A new roleplay session is starting. Join up and follow the server rules."),
+        ea: () => standardEmbed(interaction.guildId, "Early Access", "Early access is now open for approved members."),
+        setup: () => standardEmbed(interaction.guildId, "Setup", "Use Logic Systems commands for startup, EA, release, reinvites, and session over messages."),
+        release: () => standardEmbed(interaction.guildId, "Release", "The roleplay session has been released. Have fun and follow the rules."),
+        reinvites: () => standardEmbed(interaction.guildId, "Reinvites", "Reinvites are open. Use the server instructions to rejoin."),
+        over: () => standardEmbed(interaction.guildId, "Session Over", "The roleplay session is now over. Thanks for joining."),
+        rules: () => standardEmbed(interaction.guildId, "Roleplay Rules", "Follow staff instructions, stay in character, avoid fail roleplay, and keep the session fair for everyone."),
+        ssu: () => standardEmbed(interaction.guildId, "Server Startup", interaction.options.getString("notes") ?? "Server startup is now active. Join up and prepare for roleplay."),
+      };
+
+      if (handlers[interaction.commandName]) {
+        await interaction.reply({ embeds: [await handlers[interaction.commandName]()] });
+        return;
+      }
+
+      await handleCommand(interaction);
+    } catch (error) {
+      console.error(`Command failed: /${interaction.commandName}`, error);
+      await sendCommandError(interaction);
     }
+  });
 
-    if (interaction.commandName === "help") {
+  return client;
+}
+
+async function handleCommand(interaction) {
+  if (interaction.commandName === "help") {
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
@@ -143,9 +157,6 @@ export function createBot() {
       });
       return;
     }
-  });
-
-  return client;
 }
 
 async function standardEmbed(guildId, title, description) {
@@ -168,6 +179,20 @@ async function ensurePremium(interaction) {
     ephemeral: true,
   });
   return false;
+}
+
+async function sendCommandError(interaction) {
+  const payload = {
+    content: "Something went wrong while running that command. Please try again.",
+    ephemeral: true,
+  };
+
+  if (interaction.replied || interaction.deferred) {
+    await interaction.followUp(payload).catch(() => {});
+    return;
+  }
+
+  await interaction.reply(payload).catch(() => {});
 }
 
 function parseHexColor(value) {
