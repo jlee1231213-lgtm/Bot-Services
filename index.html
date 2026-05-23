@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LogicSystems.Bot.com</title>
+    <meta name="description" content="Logic Systems is a roleplay Discord bot with setup tools, startup commands, releases, reinvites, embeds, and premium anti-raid protection.">
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar" aria-label="Primary navigation">
+        <a class="brand-chip" href="#home" aria-label="Logic Systems home">
+          <img src="logic-systems-logo.png" alt="">
+        </a>
+
+        <nav class="nav-pill">
+          <a href="#commands">Commands</a>
+          <a href="#setup">Setup</a>
+          <a href="#premium">Premium</a>
+          <a href="#support">Support</a>
+        </nav>
+
+        <a class="dashboard-link" href="#dashboard" id="dashboardNav">Dashboard</a>
+      </header>
+
+      <main>
+        <section class="hero" id="home">
+          <div class="bar bar-a"></div>
+          <div class="bar bar-b"></div>
+          <div class="bar bar-c"></div>
+          <div class="bar bar-d"></div>
+          <div class="bar bar-e"></div>
+
+          <img class="bot-logo" src="logic-systems-logo.png" alt="Logic Systems logo">
+
+          <h1>Logic Systems</h1>
+          <p class="hero-copy">
+            A clean roleplay bot for startups, releases, reinvites, setup, and server protection.
+          </p>
+          <p class="hero-stats">Serving X guilds and X users</p>
+
+          <div class="hero-actions">
+            <a class="btn primary" id="inviteButton" href="#" target="_blank" rel="noreferrer">
+              Invite Bot
+            </a>
+            <a class="btn secondary" href="#dashboard" data-plan-jump="premium">Premium</a>
+          </div>
+        </section>
+
+        <section class="quick-strip" aria-label="Highlights">
+          <span>Roleplay commands</span>
+          <span>Custom embeds</span>
+          <span>Anti-raid protection</span>
+        </section>
+
+        <section class="section" id="commands">
+          <div class="section-heading">
+            <p>Commands</p>
+            <h2>Built for roleplay servers.</h2>
+          </div>
+
+          <div class="command-grid">
+            <article class="feature-card">
+              <h3>Startup</h3>
+              <p>Post clean startup notices with your server details and roleplay status.</p>
+            </article>
+            <article class="feature-card">
+              <h3>EA</h3>
+              <p>Announce early access sessions with simple, consistent formatting.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Setup</h3>
+              <p>Prepare the bot channels, roles, and defaults for your community.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Release</h3>
+              <p>Publish release announcements for sessions, updates, and events.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Reinvites</h3>
+              <p>Handle reinvite messages quickly when players need to rejoin.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Over</h3>
+              <p>Close sessions with a polished end message and next-step info.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section split" id="setup">
+          <div>
+            <p class="eyebrow">Free plan</p>
+            <h2>Start with the basics.</h2>
+            <p class="section-copy">
+              Logic Basic includes roleplay commands, setup tools, standard embeds, and Logic Systems branding in the footer.
+            </p>
+          </div>
+          <div class="plan-panel">
+            <div class="check-row">Basic commands</div>
+            <div class="check-row">Startup, EA, setup, release, reinvites, over</div>
+            <div class="check-row">Standard embed style</div>
+            <div class="check-row">Logic Systems footer</div>
+          </div>
+        </section>
+
+        <section class="section split premium-band" id="premium">
+          <div>
+            <p class="eyebrow">Premium</p>
+            <h2>Give servers their own style.</h2>
+            <p class="section-copy">
+              Premium is a paid upgrade that unlocks custom embeds, in-bot embed creation, footer customization, and private anti-raid protection.
+            </p>
+          </div>
+          <div class="plan-panel premium-panel">
+            <div class="price-row">
+              <span>Logic Premium</span>
+              <strong>$4.99/mo</strong>
+            </div>
+            <div class="check-row">Customize embeds</div>
+            <div class="check-row">Make embeds using the bot</div>
+            <div class="check-row">Remove or customize footer branding</div>
+            <div class="check-row">Own anti-raid protection</div>
+            <a class="btn primary plan-buy" href="#premium" data-plan-jump="premium">Pay for Premium</a>
+          </div>
+        </section>
+
+        <section class="section dashboard-section" id="dashboard">
+          <div class="section-heading">
+            <p>Dashboard</p>
+            <h2>Manage your bot setup.</h2>
+          </div>
+
+          <div class="dashboard-grid">
+            <aside class="server-panel">
+              <p class="eyebrow">Your bots</p>
+              <button class="server-card active" type="button" data-server="main">
+                <span>Logic RP</span>
+                <small id="mainPlanLabel">Free plan</small>
+              </button>
+              <button class="server-card" type="button" data-server="premium">
+                <span>Premium Demo</span>
+                <small>Premium plan</small>
+              </button>
+            </aside>
+
+            <form class="dashboard-panel" id="dashboardForm">
+              <div class="dashboard-head">
+                <div>
+                  <p class="eyebrow">Selected bot</p>
+                  <h3 id="selectedServerName">Logic RP</h3>
+                </div>
+                <div class="plan-toggle" role="group" aria-label="Plan selector">
+                  <button class="active" type="button" data-plan="free">Free</button>
+                  <button type="button" data-plan="premium">Premium</button>
+                </div>
+              </div>
+
+              <div class="notice" id="planNotice">
+                Free bots include Logic Systems footer branding and basic roleplay commands.
+              </div>
+
+              <div class="field-grid">
+                <label>
+                  Bot display name
+                  <input name="botName" type="text" value="Logic RP">
+                </label>
+                <label>
+                  Command prefix
+                  <input name="prefix" type="text" value="/" maxlength="4">
+                </label>
+              </div>
+
+              <label>
+                Discord server ID
+                <input name="guildId" type="text" inputmode="numeric" placeholder="Paste your server ID before buying Premium">
+              </label>
+
+              <label>
+                Embed title
+                <input name="embedTitle" type="text" value="Session Startup">
+              </label>
+
+              <label>
+                Embed message
+                <textarea name="embedMessage" rows="4">A new roleplay session is starting. Join up and follow the server rules.</textarea>
+              </label>
+
+              <div class="field-grid">
+                <label>
+                  Embed color
+                  <input name="embedColor" type="color" value="#3c43ec">
+                </label>
+                <label>
+                  Footer text
+                  <input name="footerText" type="text" value="Powered by Logic Systems">
+                </label>
+              </div>
+
+              <div class="toggle-list">
+                <label class="toggle-row">
+                  <span>
+                    <strong>Custom embeds</strong>
+                    <small>Premium lets you customize titles, colors, messages, and footer text.</small>
+                  </span>
+                  <input name="customEmbeds" type="checkbox">
+                </label>
+                <label class="toggle-row">
+                  <span>
+                    <strong>In-bot embed builder</strong>
+                    <small>Create embeds using bot commands instead of editing the site.</small>
+                  </span>
+                  <input name="embedBuilder" type="checkbox">
+                </label>
+                <label class="toggle-row">
+                  <span>
+                    <strong>Anti-raid protection</strong>
+                    <small>Protect against spam joins, mass mentions, and suspicious raids.</small>
+                  </span>
+                  <input name="antiRaid" type="checkbox">
+                </label>
+              </div>
+
+              <div class="embed-preview" aria-label="Embed preview">
+                <div class="embed-color-bar" id="previewColor"></div>
+                <div>
+                  <h4 id="previewTitle">Session Startup</h4>
+                  <p id="previewMessage">A new roleplay session is starting. Join up and follow the server rules.</p>
+                  <small id="previewFooter">Powered by Logic Systems</small>
+                </div>
+              </div>
+
+              <div class="dashboard-actions">
+                <button class="btn primary" type="submit">Save Changes</button>
+                <a class="btn secondary" href="#premium" id="upgradeButton">Upgrade Premium</a>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="section cta" id="support">
+          <img src="logic-systems-logo.png" alt="">
+          <div>
+            <p class="eyebrow">Ready</p>
+            <h2>Add LogicSystems.Bot.com to your server.</h2>
+          </div>
+          <a class="btn primary" href="#" id="inviteButtonBottom" target="_blank" rel="noreferrer">Invite Bot</a>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
