@@ -403,6 +403,13 @@ a {
   padding-top: 108px;
 }
 
+.dashboard-status {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-weight: 750;
+  line-height: 1.5;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);

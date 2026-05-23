@@ -64,6 +64,7 @@ const previewColor = document.querySelector("#previewColor");
 const previewTitle = document.querySelector("#previewTitle");
 const previewMessage = document.querySelector("#previewMessage");
 const previewFooter = document.querySelector("#previewFooter");
+const dashboardStatus = document.querySelector("#dashboardStatus");
 let loggedInGuilds = [];
 
 function loadState() {
@@ -304,18 +305,30 @@ async function initDiscordDashboard() {
   dashboardHead.append(loginButton);
 
   if (BACKEND_URL === "YOUR_BACKEND_URL") return;
-  if (!sessionToken) return;
+  if (!sessionToken) {
+    setDashboardStatus("Sign in with Discord to load your servers.");
+    return;
+  }
 
   try {
+    setDashboardStatus("Loading your Discord servers...");
     const me = await apiGet("/api/me");
     loginButton.textContent = `Signed in: ${me.user.globalName || me.user.username}`;
 
     const { guilds } = await apiGet("/api/guilds");
     loggedInGuilds = guilds;
     renderLoggedInGuilds(guilds);
+    setDashboardStatus(guilds.length ? "Select a Discord server to edit its bot settings." : "No manageable Discord servers found for this Discord account.");
   } catch {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    sessionToken = null;
+    setDashboardStatus("Discord sign-in expired. Sign in again to load your servers.");
     loginButton.textContent = "Sign in with Discord";
   }
+}
+
+function setDashboardStatus(message) {
+  if (dashboardStatus) dashboardStatus.textContent = message;
 }
 
 function renderLoggedInGuilds(guilds) {
