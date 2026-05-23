@@ -34,6 +34,16 @@ export function createServer() {
     response.json({ ok: true, service: "logic-systems-bot" });
   });
 
+  app.get("/debug/config", (_request, response) => {
+    response.json({
+      signedSessions: true,
+      hasSessionSecret: Boolean(process.env.SESSION_SECRET),
+      hasDiscordClientSecret: Boolean(process.env.DISCORD_CLIENT_SECRET),
+      publicSiteUrl: siteUrl,
+      publicBackendUrl: process.env.PUBLIC_BACKEND_URL ?? null,
+    });
+  });
+
   app.get("/", (_request, response) => {
     response
       .type("html")
