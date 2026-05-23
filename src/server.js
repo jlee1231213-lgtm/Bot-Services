@@ -21,7 +21,7 @@ export function createServer() {
   app.use((request, response, next) => {
     response.header("Access-Control-Allow-Origin", siteUrl);
     response.header("Access-Control-Allow-Credentials", "true");
-    response.header("Access-Control-Allow-Headers", "Content-Type");
+    response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     response.header("Access-Control-Allow-Methods", "GET,POST,PUT,OPTIONS");
     if (request.method === "OPTIONS") {
       response.sendStatus(204);
