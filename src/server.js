@@ -34,6 +34,12 @@ export function createServer() {
     response.json({ ok: true, service: "logic-systems-bot" });
   });
 
+  app.get("/", (_request, response) => {
+    response
+      .type("html")
+      .send(`<p>Logic Systems backend is running. Open <a href="${siteUrl}">${siteUrl}</a> for the website.</p>`);
+  });
+
   app.get("/auth/discord", (_request, response) => {
     const clientId = process.env.DISCORD_CLIENT_ID;
     if (!clientId) {
