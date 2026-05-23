@@ -280,6 +280,10 @@ function getRequestBackendUrl(request, fallbackUrl) {
 }
 
 async function exchangeDiscordCode(code, backendUrl) {
+  if (!process.env.DISCORD_CLIENT_SECRET) {
+    throw new Error("DISCORD_CLIENT_SECRET is not configured.");
+  }
+
   const params = new URLSearchParams({
     client_id: process.env.DISCORD_CLIENT_ID,
     client_secret: process.env.DISCORD_CLIENT_SECRET,
@@ -294,7 +298,10 @@ async function exchangeDiscordCode(code, backendUrl) {
     body: params,
   });
 
-  if (!response.ok) throw new Error(`Discord token exchange failed: ${response.status}`);
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Discord token exchange failed: ${response.status} ${errorBody}`);
+  }
   return response.json();
 }
 
@@ -302,7 +309,10 @@ async function discordApi(path, accessToken) {
   const response = await fetch(`https://discord.com/api/v10${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-  if (!response.ok) throw new Error(`Discord API failed: ${path} ${response.status}`);
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Discord API failed: ${path} ${response.status} ${errorBody}`);
+  }
   return response.json();
 }
 
