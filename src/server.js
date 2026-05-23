@@ -81,8 +81,7 @@ export function createServer() {
         owner: guild.owner,
       }));
 
-      const sessionId = crypto.randomUUID();
-      await createSession(sessionId, {
+      const session = {
         user: {
           id: user.id,
           username: user.username,
@@ -90,7 +89,9 @@ export function createServer() {
           avatar: user.avatar,
         },
         guilds: manageableGuilds,
-      });
+      };
+      const sessionId = createSignedSession(session);
+      await createSession(sessionId, session);
 
       response.cookie("logic_session", sessionId, {
         httpOnly: true,
@@ -260,7 +261,7 @@ function cleanText(value, fallback, maxLength) {
 
 async function requireSession(request, response) {
   const sessionId = getBearerToken(request) ?? getCookie(request, "logic_session");
-  const session = sessionId ? await getSession(sessionId) : null;
+  const session = sessionId ? (verifySignedSession(sessionId) ?? await getSession(sessionId)) : null;
   if (!session) {
     response.status(401).json({ error: "Sign in with Discord first." });
     return null;
@@ -278,6 +279,29 @@ function getBearerToken(request) {
   const header = request.headers.authorization;
   if (!header?.startsWith("Bearer ")) return null;
   return header.slice("Bearer ".length);
+}
+
+function createSignedSession(session) {
+  const payload = Buffer.from(JSON.stringify(session), "utf8").toString("base64url");
+  const signature = signPayload(payload);
+  return `${payload}.${signature}`;
+}
+
+function verifySignedSession(token) {
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature || signPayload(payload) !== signature) return null;
+
+  try {
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function signPayload(payload) {
+  const secret = process.env.SESSION_SECRET ?? process.env.DISCORD_CLIENT_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET or DISCORD_CLIENT_SECRET is required for dashboard sessions.");
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
 function getRequestBackendUrl(request, fallbackUrl) {

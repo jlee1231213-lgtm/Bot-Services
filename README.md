@@ -30,6 +30,7 @@ Static website plus a Discord bot/backend for Logic Systems.
    DISCORD_TOKEN=your_discord_bot_token
    DISCORD_CLIENT_ID=1507551249204117535
    DISCORD_CLIENT_SECRET=your_discord_oauth_client_secret
+   SESSION_SECRET=make_a_long_random_secret
    PADDLE_WEBHOOK_SECRET=your_paddle_webhook_secret
    PUBLIC_SITE_URL=https://logicsystems.netlify.app
    PUBLIC_BACKEND_URL=https://YOUR_BACKEND_DOMAIN
