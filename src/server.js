@@ -98,7 +98,7 @@ export function createServer() {
         sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      response.redirect(`${siteUrl}/#dashboard`);
+      response.redirect(`${siteUrl}/#dashboard?session=${encodeURIComponent(sessionId)}`);
     } catch (error) {
       console.error("Discord OAuth failed", error);
       response
@@ -259,7 +259,7 @@ function cleanText(value, fallback, maxLength) {
 }
 
 async function requireSession(request, response) {
-  const sessionId = getCookie(request, "logic_session");
+  const sessionId = getBearerToken(request) ?? getCookie(request, "logic_session");
   const session = sessionId ? await getSession(sessionId) : null;
   if (!session) {
     response.status(401).json({ error: "Sign in with Discord first." });
@@ -272,6 +272,12 @@ function getCookie(request, name) {
   const cookies = request.headers.cookie?.split(";").map((cookie) => cookie.trim()) ?? [];
   const prefix = `${name}=`;
   return cookies.find((cookie) => cookie.startsWith(prefix))?.slice(prefix.length);
+}
+
+function getBearerToken(request) {
+  const header = request.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return null;
+  return header.slice("Bearer ".length);
 }
 
 function getRequestBackendUrl(request, fallbackUrl) {

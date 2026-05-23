@@ -1,5 +1,6 @@
 const BOT_CLIENT_ID = "1507551249204117535";
 const STORAGE_KEY = "logic-systems-dashboard";
+const SESSION_STORAGE_KEY = "logic-systems-session";
 const PADDLE_CLIENT_TOKEN = "live_dc4683003cbffc6a174bbe866a3";
 const PADDLE_PRICE_ID = "pri_01ks9d2ry6by4xvfrjf0xad17t";
 const PADDLE_ENVIRONMENT = "production";
@@ -53,6 +54,7 @@ const defaults = {
 
 let selectedServer = "main";
 let state = loadState();
+let sessionToken = loadSessionToken();
 
 const form = document.querySelector("#dashboardForm");
 const selectedServerName = document.querySelector("#selectedServerName");
@@ -74,6 +76,17 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadSessionToken() {
+  const hash = new URLSearchParams(window.location.hash.split("?")[1] ?? "");
+  const session = hash.get("session");
+  if (session) {
+    localStorage.setItem(SESSION_STORAGE_KEY, session);
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#dashboard`);
+    return session;
+  }
+  return localStorage.getItem(SESSION_STORAGE_KEY);
 }
 
 function currentBot() {
@@ -291,6 +304,7 @@ async function initDiscordDashboard() {
   dashboardHead.append(loginButton);
 
   if (BACKEND_URL === "YOUR_BACKEND_URL") return;
+  if (!sessionToken) return;
 
   try {
     const me = await apiGet("/api/me");
@@ -307,6 +321,15 @@ async function initDiscordDashboard() {
 function renderLoggedInGuilds(guilds) {
   const panel = document.querySelector(".server-panel");
   panel.querySelectorAll(".server-card[data-discord-guild]").forEach((card) => card.remove());
+  panel.querySelectorAll(".server-empty").forEach((message) => message.remove());
+
+  if (guilds.length === 0) {
+    const message = document.createElement("p");
+    message.className = "server-empty";
+    message.textContent = "No manageable Discord servers found.";
+    panel.append(message);
+    return;
+  }
 
   guilds.forEach((guild) => {
     const card = document.createElement("button");
@@ -370,7 +393,10 @@ async function saveDashboardSettings() {
 }
 
 async function apiGet(path) {
-  const response = await fetch(`${BACKEND_URL}${path}`, { credentials: "include" });
+  const response = await fetch(`${BACKEND_URL}${path}`, {
+    credentials: "include",
+    headers: getAuthHeaders(),
+  });
   return parseApiResponse(response);
 }
 
@@ -378,10 +404,14 @@ async function apiPut(path, body) {
   const response = await fetch(`${BACKEND_URL}${path}`, {
     method: "PUT",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(body),
   });
   return parseApiResponse(response);
+}
+
+function getAuthHeaders() {
+  return sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {};
 }
 
 async function parseApiResponse(response) {
