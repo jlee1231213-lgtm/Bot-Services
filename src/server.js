@@ -47,9 +47,11 @@ export function createServer() {
       return;
     }
 
+    const requestBackendUrl = getRequestBackendUrl(_request, backendUrl);
+
     const params = new URLSearchParams({
       client_id: clientId,
-      redirect_uri: `${backendUrl}/auth/discord/callback`,
+      redirect_uri: `${requestBackendUrl}/auth/discord/callback`,
       response_type: "code",
       scope: "identify guilds",
       prompt: "none",
@@ -66,7 +68,7 @@ export function createServer() {
     }
 
     try {
-      const tokenData = await exchangeDiscordCode(code, backendUrl);
+      const tokenData = await exchangeDiscordCode(code, getRequestBackendUrl(request, backendUrl));
       const [user, guilds] = await Promise.all([
         discordApi("/users/@me", tokenData.access_token),
         discordApi("/users/@me/guilds", tokenData.access_token),
@@ -267,6 +269,14 @@ function getCookie(request, name) {
   const cookies = request.headers.cookie?.split(";").map((cookie) => cookie.trim()) ?? [];
   const prefix = `${name}=`;
   return cookies.find((cookie) => cookie.startsWith(prefix))?.slice(prefix.length);
+}
+
+function getRequestBackendUrl(request, fallbackUrl) {
+  if (process.env.PUBLIC_BACKEND_URL) return process.env.PUBLIC_BACKEND_URL;
+
+  const host = request.get("x-forwarded-host") ?? request.get("host");
+  const protocol = request.get("x-forwarded-proto") ?? request.protocol ?? "https";
+  return host ? `${protocol}://${host}` : fallbackUrl;
 }
 
 async function exchangeDiscordCode(code, backendUrl) {
