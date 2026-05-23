@@ -3,7 +3,7 @@ const STORAGE_KEY = "logic-systems-dashboard";
 const PADDLE_CLIENT_TOKEN = "live_dc4683003cbffc6a174bbe866a3";
 const PADDLE_PRICE_ID = "pri_01ks9d2ry6by4xvfrjf0xad17t";
 const PADDLE_ENVIRONMENT = "production";
-const BACKEND_URL = "YOUR_BACKEND_URL";
+const BACKEND_URL = "https://bot-services-uvwb.onrender.com";
 
 const inviteUrl =
   BOT_CLIENT_ID === "YOUR_BOT_CLIENT_ID"
