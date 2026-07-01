@@ -3,7 +3,10 @@ import { SlashCommandBuilder } from "discord.js";
 export const commands = [
   new SlashCommandBuilder()
     .setName("startup")
-    .setDescription("Post a roleplay startup message."),
+    .setDescription("Post a roleplay startup message.")
+    .addStringOption((option) =>
+      option.setName("notes").setDescription("Extra startup notes").setRequired(false),
+    ),
   new SlashCommandBuilder()
     .setName("ea")
     .setDescription("Post an early access roleplay message."),
@@ -12,13 +15,22 @@ export const commands = [
     .setDescription("Show the basic Logic Systems setup steps."),
   new SlashCommandBuilder()
     .setName("release")
-    .setDescription("Post a roleplay release message."),
+    .setDescription("Post a roleplay release message.")
+    .addStringOption((option) =>
+      option.setName("notes").setDescription("Extra release notes").setRequired(false),
+    ),
   new SlashCommandBuilder()
     .setName("reinvites")
-    .setDescription("Post a reinvite notice."),
+    .setDescription("Post a reinvite notice.")
+    .addStringOption((option) =>
+      option.setName("notes").setDescription("Extra reinvite notes").setRequired(false),
+    ),
   new SlashCommandBuilder()
     .setName("over")
-    .setDescription("Post a session over message."),
+    .setDescription("Post a session over message.")
+    .addStringOption((option) =>
+      option.setName("notes").setDescription("Extra closing notes").setRequired(false),
+    ),
   new SlashCommandBuilder()
     .setName("help")
     .setDescription("Show Logic Systems commands and plan info."),
@@ -52,6 +64,35 @@ export const commands = [
     .setDescription("Start a simple roleplay session vote.")
     .addStringOption((option) =>
       option.setName("question").setDescription("Vote question").setRequired(false),
+    ),
+  new SlashCommandBuilder()
+    .setName("priority")
+    .setDescription("Announce priority scene status.")
+    .addStringOption((option) =>
+      option
+        .setName("status")
+        .setDescription("Current priority status.")
+        .setRequired(true)
+        .addChoices(
+          { name: "Available", value: "available" },
+          { name: "Cooldown", value: "cooldown" },
+          { name: "Hold", value: "hold" },
+        ),
+    ),
+  new SlashCommandBuilder()
+    .setName("scene")
+    .setDescription("Post a scene announcement.")
+    .addStringOption((option) =>
+      option.setName("location").setDescription("Scene location").setRequired(true),
+    )
+    .addStringOption((option) =>
+      option.setName("details").setDescription("Scene details").setRequired(false),
+    ),
+  new SlashCommandBuilder()
+    .setName("staff")
+    .setDescription("Post a staff announcement.")
+    .addStringOption((option) =>
+      option.setName("message").setDescription("Staff message").setRequired(true),
     ),
   new SlashCommandBuilder()
     .setName("embed")

@@ -19,12 +19,12 @@ export function createBot() {
 
     try {
       const handlers = {
-        startup: () => standardEmbed(interaction.guildId, "Session Startup", "A new roleplay session is starting. Join up and follow the server rules."),
+        startup: () => standardEmbed(interaction.guildId, "Session Startup", withNotes(interaction, "A new roleplay session is starting. Join up and follow the server rules.")),
         ea: () => standardEmbed(interaction.guildId, "Early Access", "Early access is now open for approved members."),
         setup: () => standardEmbed(interaction.guildId, "Setup", "Use Logic Systems commands for startup, EA, release, reinvites, and session over messages."),
-        release: () => standardEmbed(interaction.guildId, "Release", "The roleplay session has been released. Have fun and follow the rules."),
-        reinvites: () => standardEmbed(interaction.guildId, "Reinvites", "Reinvites are open. Use the server instructions to rejoin."),
-        over: () => standardEmbed(interaction.guildId, "Session Over", "The roleplay session is now over. Thanks for joining."),
+        release: () => standardEmbed(interaction.guildId, "Release", withNotes(interaction, "The roleplay session has been released. Have fun and follow the rules.")),
+        reinvites: () => standardEmbed(interaction.guildId, "Reinvites", withNotes(interaction, "Reinvites are open. Use the server instructions to rejoin.")),
+        over: () => standardEmbed(interaction.guildId, "Session Over", withNotes(interaction, "The roleplay session is now over. Thanks for joining.")),
         rules: () => standardEmbed(interaction.guildId, "Roleplay Rules", "Follow staff instructions, stay in character, avoid fail roleplay, and keep the session fair for everyone."),
         ssu: () => standardEmbed(interaction.guildId, "Server Startup", interaction.options.getString("notes") ?? "Server startup is now active. Join up and prepare for roleplay."),
       };
@@ -51,7 +51,7 @@ async function handleCommand(interaction) {
           new EmbedBuilder()
             .setColor(brandColor)
             .setTitle("Logic Systems Commands")
-            .setDescription("Free: `/startup`, `/ea`, `/setup`, `/release`, `/reinvites`, `/over`, `/rules`, `/peacetime`, `/ssu`, `/vote`, `/status`\nPremium: `/embed`, `/announce`, `/antiraid`, dashboard embed customization.")
+            .setDescription("Free: `/startup`, `/ea`, `/setup`, `/release`, `/reinvites`, `/over`, `/rules`, `/peacetime`, `/priority`, `/scene`, `/staff`, `/ssu`, `/vote`, `/status`\nPremium: `/embed`, `/announce`, `/antiraid`, dashboard embed customization.")
             .setFooter({ text: "Logic Systems" }),
         ],
         ephemeral: true,
@@ -101,6 +101,33 @@ async function handleCommand(interaction) {
             .setFooter({ text: "Use this as a session vote prompt" }),
         ],
       });
+      return;
+    }
+
+    if (interaction.commandName === "priority") {
+      const status = interaction.options.getString("status", true);
+      const messages = {
+        available: ["Priority Available", "Priority scenes are available. Keep scenes realistic and follow staff directions."],
+        cooldown: ["Priority Cooldown", "Priority scenes are on cooldown. No new priority scenes until staff clears it."],
+        hold: ["Priority Hold", "All priority scenes are on hold. Continue normal roleplay and avoid major incidents."],
+      };
+      const [title, description] = messages[status];
+      await interaction.reply({ embeds: [await standardEmbed(interaction.guildId, title, description)] });
+      return;
+    }
+
+    if (interaction.commandName === "scene") {
+      const location = interaction.options.getString("location", true);
+      const details = interaction.options.getString("details") ?? "Staff has posted a scene update. Follow directions and keep roleplay clean.";
+      await interaction.reply({
+        embeds: [await standardEmbed(interaction.guildId, `Scene: ${location}`, details)],
+      });
+      return;
+    }
+
+    if (interaction.commandName === "staff") {
+      const message = interaction.options.getString("message", true);
+      await interaction.reply({ embeds: [await standardEmbed(interaction.guildId, "Staff Announcement", message)] });
       return;
     }
 
@@ -157,6 +184,10 @@ async function handleCommand(interaction) {
       });
       return;
     }
+}
+
+function withNotes(interaction, fallback) {
+  return interaction.options.getString("notes") ?? fallback;
 }
 
 async function standardEmbed(guildId, title, description) {
