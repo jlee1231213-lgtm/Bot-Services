@@ -5,11 +5,26 @@ export const commands = [
     .setName("startup")
     .setDescription("Post a roleplay startup message.")
     .addStringOption((option) =>
+      option.setName("server_name").setDescription("Roleplay server name").setRequired(false),
+    )
+    .addStringOption((option) =>
+      option.setName("server_code").setDescription("Join code or link").setRequired(false),
+    )
+    .addStringOption((option) =>
+      option.setName("ping").setDescription("Ping text, like @here or @Sessions").setRequired(false),
+    )
+    .addStringOption((option) =>
       option.setName("notes").setDescription("Extra startup notes").setRequired(false),
     ),
   new SlashCommandBuilder()
     .setName("ea")
-    .setDescription("Post an early access roleplay message."),
+    .setDescription("Post an early access roleplay message.")
+    .addStringOption((option) =>
+      option.setName("ping").setDescription("Ping text, like @here or @EA").setRequired(false),
+    )
+    .addStringOption((option) =>
+      option.setName("notes").setDescription("Extra early access notes").setRequired(false),
+    ),
   new SlashCommandBuilder()
     .setName("setup")
     .setDescription("Show the basic Logic Systems setup steps."),
@@ -17,17 +32,29 @@ export const commands = [
     .setName("release")
     .setDescription("Post a roleplay release message.")
     .addStringOption((option) =>
+      option.setName("server_name").setDescription("Roleplay server name").setRequired(false),
+    )
+    .addStringOption((option) =>
+      option.setName("server_code").setDescription("Join code or link").setRequired(false),
+    )
+    .addStringOption((option) =>
       option.setName("notes").setDescription("Extra release notes").setRequired(false),
     ),
   new SlashCommandBuilder()
     .setName("reinvites")
     .setDescription("Post a reinvite notice.")
+    .addIntegerOption((option) =>
+      option.setName("amount").setDescription("How many reinvites are open").setRequired(false).setMinValue(1),
+    )
     .addStringOption((option) =>
       option.setName("notes").setDescription("Extra reinvite notes").setRequired(false),
     ),
   new SlashCommandBuilder()
     .setName("over")
     .setDescription("Post a session over message.")
+    .addStringOption((option) =>
+      option.setName("next_session").setDescription("When the next session may happen").setRequired(false),
+    )
     .addStringOption((option) =>
       option.setName("notes").setDescription("Extra closing notes").setRequired(false),
     ),
@@ -56,6 +83,15 @@ export const commands = [
   new SlashCommandBuilder()
     .setName("ssu")
     .setDescription("Post a server startup announcement with optional notes.")
+    .addStringOption((option) =>
+      option.setName("server_name").setDescription("Roleplay server name").setRequired(false),
+    )
+    .addStringOption((option) =>
+      option.setName("server_code").setDescription("Join code or link").setRequired(false),
+    )
+    .addStringOption((option) =>
+      option.setName("ping").setDescription("Ping text, like @here or @Sessions").setRequired(false),
+    )
     .addStringOption((option) =>
       option.setName("notes").setDescription("Extra startup notes").setRequired(false),
     ),

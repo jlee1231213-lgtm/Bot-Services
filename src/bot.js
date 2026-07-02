@@ -19,14 +19,14 @@ export function createBot() {
 
     try {
       const handlers = {
-        startup: () => standardEmbed(interaction.guildId, "Session Startup", withNotes(interaction, "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.")),
-        ea: () => standardEmbed(interaction.guildId, "Early Access", "Early access is now open for approved members. Prepare your characters and wait for staff direction."),
+        startup: () => standardEmbed(interaction.guildId, "Session Startup", startupMessage(interaction)),
+        ea: () => standardEmbed(interaction.guildId, "Early Access", earlyAccessMessage(interaction)),
         setup: () => standardEmbed(interaction.guildId, "Logic Systems Setup", "Use Logic Systems for startup, EA, release, reinvites, peacetime, priority, staff notices, and session over messages."),
-        release: () => standardEmbed(interaction.guildId, "Session Release", withNotes(interaction, "The roleplay session has been released. Have fun, stay realistic, and follow the rules.")),
-        reinvites: () => standardEmbed(interaction.guildId, "Reinvites Open", withNotes(interaction, "Reinvites are open. Use the server instructions to rejoin cleanly.")),
-        over: () => standardEmbed(interaction.guildId, "Session Over", withNotes(interaction, "The roleplay session is now over. Thanks for joining the session.")),
+        release: () => standardEmbed(interaction.guildId, "Session Release", releaseMessage(interaction)),
+        reinvites: () => standardEmbed(interaction.guildId, "Reinvites Open", reinviteMessage(interaction)),
+        over: () => standardEmbed(interaction.guildId, "Session Over", sessionOverMessage(interaction)),
         rules: () => standardEmbed(interaction.guildId, "Roleplay Rules", "Follow staff instructions, stay in character, avoid fail roleplay, and keep every scene fair for everyone."),
-        ssu: () => standardEmbed(interaction.guildId, "Server Startup", interaction.options.getString("notes") ?? "Server startup is now active. Join up and prepare for roleplay."),
+        ssu: () => standardEmbed(interaction.guildId, "Server Startup", startupMessage(interaction)),
       };
 
       if (handlers[interaction.commandName]) {
@@ -179,8 +179,50 @@ async function handleCommand(interaction) {
     }
 }
 
-function withNotes(interaction, fallback) {
-  return interaction.options.getString("notes") ?? fallback;
+function startupMessage(interaction) {
+  return buildMessage("A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.", [
+    ["Server", interaction.options.getString("server_name")],
+    ["Code", interaction.options.getString("server_code")],
+    ["Ping", interaction.options.getString("ping")],
+    ["Notes", interaction.options.getString("notes")],
+  ]);
+}
+
+function earlyAccessMessage(interaction) {
+  return buildMessage("Early access is now open for approved members. Prepare your characters and wait for staff direction.", [
+    ["Ping", interaction.options.getString("ping")],
+    ["Notes", interaction.options.getString("notes")],
+  ]);
+}
+
+function releaseMessage(interaction) {
+  return buildMessage("The roleplay session has been released. Have fun, stay realistic, and follow the rules.", [
+    ["Server", interaction.options.getString("server_name")],
+    ["Code", interaction.options.getString("server_code")],
+    ["Notes", interaction.options.getString("notes")],
+  ]);
+}
+
+function reinviteMessage(interaction) {
+  const amount = interaction.options.getInteger("amount");
+  return buildMessage("Reinvites are open. Use the server instructions to rejoin cleanly.", [
+    ["Amount", amount ? `${amount} reinvite${amount === 1 ? "" : "s"}` : null],
+    ["Notes", interaction.options.getString("notes")],
+  ]);
+}
+
+function sessionOverMessage(interaction) {
+  return buildMessage("The roleplay session is now over. Thanks for joining the session.", [
+    ["Next Session", interaction.options.getString("next_session")],
+    ["Notes", interaction.options.getString("notes")],
+  ]);
+}
+
+function buildMessage(base, rows) {
+  const details = rows
+    .filter(([, value]) => value)
+    .map(([label, value]) => `**${label}:** ${value}`);
+  return details.length ? `${base}\n\n${details.join("\n")}` : base;
 }
 
 async function standardEmbed(guildId, title, description) {
