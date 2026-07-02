@@ -243,7 +243,8 @@ async function initDiscordDashboard() {
       alert("Add your hosted backend URL in script.js first.");
       return;
     }
-    window.location.href = `${BACKEND_URL}/auth/discord`;
+    const returnTo = encodeURIComponent(window.location.origin);
+    window.location.href = `${BACKEND_URL}/auth/discord?returnTo=${returnTo}`;
   });
   dashboardHead.append(loginButton);
 

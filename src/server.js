@@ -19,7 +19,8 @@ export function createServer() {
   const backendUrl = process.env.PUBLIC_BACKEND_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
 
   app.use((request, response, next) => {
-    response.header("Access-Control-Allow-Origin", siteUrl);
+    const origin = getSafeSiteOrigin(request.get("origin")) ?? siteUrl;
+    response.header("Access-Control-Allow-Origin", origin);
     response.header("Access-Control-Allow-Credentials", "true");
     response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     response.header("Access-Control-Allow-Methods", "GET,POST,PUT,OPTIONS");
@@ -50,14 +51,15 @@ export function createServer() {
       .send(`<p>Logic Systems backend is running. Open <a href="${siteUrl}">${siteUrl}</a> for the website.</p>`);
   });
 
-  app.get("/auth/discord", (_request, response) => {
+  app.get("/auth/discord", (request, response) => {
     const clientId = process.env.DISCORD_CLIENT_ID;
     if (!clientId) {
       response.status(500).send("DISCORD_CLIENT_ID is not configured.");
       return;
     }
 
-    const requestBackendUrl = getRequestBackendUrl(_request, backendUrl);
+    const requestBackendUrl = getRequestBackendUrl(request, backendUrl);
+    const returnTo = getSafeSiteOrigin(request.query.returnTo);
 
     const params = new URLSearchParams({
       client_id: clientId,
@@ -66,6 +68,7 @@ export function createServer() {
       scope: "identify guilds",
       prompt: "none",
     });
+    if (returnTo) params.set("state", createOAuthState(returnTo));
 
     response.redirect(`https://discord.com/oauth2/authorize?${params}`);
   });
@@ -109,7 +112,8 @@ export function createServer() {
         sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      response.redirect(`${siteUrl}/#dashboard?session=${encodeURIComponent(sessionId)}`);
+      const returnTo = parseOAuthState(request.query.state) ?? siteUrl;
+      response.redirect(`${returnTo}/#dashboard?session=${encodeURIComponent(sessionId)}`);
     } catch (error) {
       console.error("Discord OAuth failed", error);
       response
@@ -315,6 +319,32 @@ function getRequestBackendUrl(request, fallbackUrl) {
   const host = request.get("x-forwarded-host") ?? request.get("host");
   const protocol = request.get("x-forwarded-proto") ?? request.protocol ?? "https";
   return host ? `${protocol}://${host}` : fallbackUrl;
+}
+
+function getSafeSiteOrigin(value) {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    const url = new URL(value);
+    const isLocalhost = ["localhost", "127.0.0.1"].includes(url.hostname);
+    if (url.protocol !== "https:" && !(isLocalhost && url.protocol === "http:")) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function createOAuthState(returnTo) {
+  return Buffer.from(JSON.stringify({ returnTo }), "utf8").toString("base64url");
+}
+
+function parseOAuthState(state) {
+  if (typeof state !== "string" || !state) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
+    return getSafeSiteOrigin(payload.returnTo);
+  } catch {
+    return null;
+  }
 }
 
 async function exchangeDiscordCode(code, backendUrl) {
