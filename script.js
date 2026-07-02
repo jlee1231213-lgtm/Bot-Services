@@ -179,6 +179,8 @@ const previewMessage = document.querySelector("#previewMessage");
 const previewFooter = document.querySelector("#previewFooter");
 const dashboardStatus = document.querySelector("#dashboardStatus");
 const commandTemplateList = document.querySelector("#commandTemplateList");
+const botRequestForm = document.querySelector("#botRequestForm");
+const requestStatus = document.querySelector("#requestStatus");
 let loggedInGuilds = [];
 
 function loadState() {
@@ -412,8 +414,38 @@ form.addEventListener("submit", (event) => {
   saveDashboardSettings();
 });
 
+if (botRequestForm) {
+  botRequestForm.addEventListener("submit", submitBotRequest);
+}
+
 renderDashboard();
 initDiscordDashboard();
+
+async function submitBotRequest(event) {
+  event.preventDefault();
+  const formData = new FormData(botRequestForm);
+  const request = Object.fromEntries(formData.entries());
+
+  if (BACKEND_URL === "YOUR_BACKEND_URL") {
+    setRequestStatus("Request saved in this browser. Add the backend URL to send it to staff.");
+    localStorage.setItem("logic-systems-last-request", JSON.stringify({ ...request, createdAt: new Date().toISOString() }));
+    botRequestForm.reset();
+    return;
+  }
+
+  try {
+    setRequestStatus("Sending request...");
+    const result = await apiPost("/api/bot-requests", request);
+    setRequestStatus(`Request sent. Your request ID is ${result.request.id}.`);
+    botRequestForm.reset();
+  } catch (error) {
+    setRequestStatus(error.message || "Could not send request. Try again in a minute.");
+  }
+}
+
+function setRequestStatus(message) {
+  if (requestStatus) requestStatus.textContent = message;
+}
 
 async function initDiscordDashboard() {
   const dashboardHead = document.querySelector(".dashboard-head");
@@ -546,6 +578,16 @@ async function apiGet(path) {
 async function apiPut(path, body) {
   const response = await fetch(`${BACKEND_URL}${path}`, {
     method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(body),
+  });
+  return parseApiResponse(response);
+}
+
+async function apiPost(path, body) {
+  const response = await fetch(`${BACKEND_URL}${path}`, {
+    method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(body),

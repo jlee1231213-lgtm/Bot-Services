@@ -65,6 +65,25 @@ export async function getGuildSettings(guildId) {
   return store.settings?.[guildId] ?? null;
 }
 
+export async function createBotRequest(details = {}) {
+  const store = await readStore();
+  store.botRequests ??= [];
+  const request = {
+    id: cryptoRandomId(),
+    status: "new",
+    createdAt: new Date().toISOString(),
+    ...details,
+  };
+  store.botRequests.unshift(request);
+  await writeStore(store);
+  return request;
+}
+
+export async function getBotRequests() {
+  const store = await readStore();
+  return store.botRequests ?? [];
+}
+
 export async function createSession(sessionId, session) {
   const store = await readStore();
   store.sessions ??= {};
@@ -86,4 +105,8 @@ export async function deleteSession(sessionId) {
     delete store.sessions[sessionId];
     await writeStore(store);
   }
+}
+
+function cryptoRandomId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }

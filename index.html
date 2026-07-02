@@ -18,6 +18,7 @@
         <nav class="nav-links">
           <a href="#tools">Tools</a>
           <a href="#commands">Commands</a>
+          <a href="#request">Request</a>
           <a href="#dashboard">Dashboard</a>
           <a href="#support">Support</a>
         </nav>
@@ -35,7 +36,7 @@
             </p>
             <div class="hero-actions">
               <a class="btn primary" href="#" id="inviteButtonHero" target="_blank" rel="noreferrer">Add to Discord</a>
-              <a class="btn secondary" href="#dashboard">Customize Embeds</a>
+              <a class="btn secondary" href="#request">Request Custom Bot</a>
             </div>
             <div class="hero-stats" aria-label="Service stats">
               <span><strong>18</strong> commands</span>
@@ -151,6 +152,69 @@
               <span>/antiraid</span>
               <p>Check protection status.</p>
             </article>
+          </div>
+        </section>
+
+        <section class="section request-section" id="request">
+          <div class="section-heading">
+            <p class="eyebrow">Free Request</p>
+            <h2>Tell us the bot you want. Keep it simple.</h2>
+          </div>
+
+          <div class="request-grid">
+            <div class="request-copy">
+              <p>
+                Request a free custom roleplay bot setup without picking through every setting first. Send the basics, then use the dashboard later to tune command templates, embeds, colors, pings, and channels.
+              </p>
+              <div class="request-steps">
+                <span>01 Fill the request</span>
+                <span>02 Add the bot</span>
+                <span>03 Customize commands</span>
+              </div>
+            </div>
+
+            <form class="request-panel" id="botRequestForm">
+              <p class="request-status" id="requestStatus">Requests are free. Put your Discord username so staff can reach you.</p>
+
+              <div class="field-grid">
+                <label>
+                  Server name
+                  <input name="serverName" type="text" placeholder="Los Angeles RP" required>
+                </label>
+                <label>
+                  Your Discord
+                  <input name="discordTag" type="text" placeholder="username or @user" required>
+                </label>
+              </div>
+
+              <div class="field-grid">
+                <label>
+                  Bot name
+                  <input name="botName" type="text" placeholder="Logic Systems">
+                </label>
+                <label>
+                  Server invite
+                  <input name="invite" type="text" placeholder="discord.gg/yourserver">
+                </label>
+              </div>
+
+              <label>
+                Bot style
+                <input name="style" type="text" placeholder="Clean, professional, Roblox RP, staff focused">
+              </label>
+
+              <label>
+                Commands wanted
+                <textarea name="commands" rows="3">startup, release, reinvites, staff, tickets, moderation</textarea>
+              </label>
+
+              <label>
+                Extra notes
+                <textarea name="notes" rows="4" placeholder="Colors, departments, staff roles, channels, rules, or anything custom."></textarea>
+              </label>
+
+              <button class="btn primary" type="submit">Send Request</button>
+            </form>
           </div>
         </section>
 

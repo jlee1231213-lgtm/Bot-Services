@@ -2,8 +2,10 @@ import express from "express";
 import { Environment, EventName, LogLevel, Paddle } from "@paddle/paddle-node-sdk";
 import crypto from "node:crypto";
 import {
+  createBotRequest,
   createSession,
   deleteSession,
+  getBotRequests,
   getGuildSettings,
   getSession,
   isPremiumGuild,
@@ -174,6 +176,19 @@ export function createServer() {
     const settings = sanitizeSettings(request.body);
     await setGuildSettings(request.params.guildId, settings);
     response.json({ ok: true, settings });
+  });
+
+  app.post("/api/bot-requests", express.json(), async (request, response) => {
+    const botRequest = await createBotRequest(sanitizeBotRequest(request.body));
+    response.status(201).json({ ok: true, request: botRequest });
+  });
+
+  app.get("/api/bot-requests", async (request, response) => {
+    if (!isAdminRequest(request)) {
+      response.status(403).json({ error: "Admin access required." });
+      return;
+    }
+    response.json({ requests: await getBotRequests() });
   });
 
   app.post("/api/premium/manual", express.json(), async (request, response) => {
@@ -365,6 +380,23 @@ function sanitizeSettings(body) {
     customEmbeds: Boolean(body.customEmbeds),
     commandTemplates: sanitizeCommandTemplates(body.commandTemplates),
   };
+}
+
+function sanitizeBotRequest(body = {}) {
+  return {
+    serverName: cleanText(body.serverName, "Unnamed RP Server", 120),
+    discordTag: cleanText(body.discordTag, "Not provided", 80),
+    invite: cleanText(body.invite, "", 160),
+    botName: cleanText(body.botName, "Logic Custom", 80),
+    style: cleanText(body.style, "Clean roleplay system", 120),
+    commands: cleanText(body.commands, "startup, release, reinvites, staff, tickets", 500),
+    notes: cleanText(body.notes, "No extra notes.", 1000),
+  };
+}
+
+function isAdminRequest(request) {
+  const adminKey = process.env.ADMIN_KEY;
+  return Boolean(adminKey && request.get("x-admin-key") === adminKey);
 }
 
 function mergeSettings(settings = {}) {
