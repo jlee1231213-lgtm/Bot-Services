@@ -251,6 +251,64 @@
                 </label>
               </div>
 
+              <div class="command-template-panel">
+                <div class="subsection-head">
+                  <div>
+                    <p class="eyebrow">Command Templates</p>
+                    <h4>Editable command defaults</h4>
+                  </div>
+                  <span>Saved per Discord server</span>
+                </div>
+
+                <div class="command-template-grid" id="commandTemplateList" aria-label="Command template selector"></div>
+
+                <div class="field-grid">
+                  <label>
+                    Command title
+                    <input name="commandTitle" type="text" value="Session Startup">
+                  </label>
+                  <label>
+                    Command color
+                    <input name="commandColor" type="color" value="#5865f2">
+                  </label>
+                </div>
+
+                <label>
+                  Command message
+                  <textarea name="commandMessage" rows="4">A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.</textarea>
+                </label>
+
+                <div class="field-grid">
+                  <label>
+                    Footer text
+                    <input name="commandFooter" type="text" value="Powered by Logic Systems">
+                  </label>
+                  <label>
+                    Cooldown minutes
+                    <input name="commandCooldown" type="number" value="10" min="0" max="999">
+                  </label>
+                </div>
+
+                <div class="field-grid">
+                  <label>
+                    Ping role ID
+                    <input name="commandPingRole" type="text" inputmode="numeric" placeholder="Optional role ID">
+                  </label>
+                  <label>
+                    Output channel ID
+                    <input name="commandChannel" type="text" inputmode="numeric" placeholder="Optional channel ID">
+                  </label>
+                </div>
+
+                <label class="toggle-row command-enabled">
+                  <span>
+                    <strong>Command enabled</strong>
+                    <small>Turn this command template on for the bot response.</small>
+                  </span>
+                  <input name="commandEnabled" type="checkbox" checked>
+                </label>
+              </div>
+
               <div class="embed-preview" aria-label="Embed preview">
                 <div class="embed-color-bar" id="previewColor"></div>
                 <div>

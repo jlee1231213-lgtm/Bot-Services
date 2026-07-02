@@ -18,6 +18,119 @@ document.querySelectorAll("#inviteButton, #inviteButtonHero, #inviteButtonBottom
   }
 });
 
+const commandTemplateDefaults = {
+  startup: {
+    label: "/startup",
+    title: "Session Startup",
+    message: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
+    color: "#5865f2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "10",
+    enabled: true,
+  },
+  release: {
+    label: "/release",
+    title: "Session Release",
+    message: "The roleplay session has been released. Check the details below and join when ready.",
+    color: "#23c46e",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  reinvites: {
+    label: "/reinvites",
+    title: "Reinvites Open",
+    message: "Reinvites are open for this session. Use the details below to return to roleplay.",
+    color: "#64d8ff",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "5",
+    enabled: true,
+  },
+  ea: {
+    label: "/ea",
+    title: "Early Access",
+    message: "Early access is now open. Staff may use this post for limited session entry.",
+    color: "#f2c94c",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  over: {
+    label: "/over",
+    title: "Session Over",
+    message: "The roleplay session is now over. Thank you for joining.",
+    color: "#ff6b6b",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  peacetime: {
+    label: "/peacetime",
+    title: "Peacetime Status",
+    message: "Peacetime status has been updated for the server.",
+    color: "#9b8cff",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  priority: {
+    label: "/priority",
+    title: "Priority Status",
+    message: "Priority status has been updated. Follow staff directions before starting scenes.",
+    color: "#ff9f43",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  scene: {
+    label: "/scene",
+    title: "Scene Update",
+    message: "A new scene update has been posted. Use the details below for location and instructions.",
+    color: "#76f0d2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  staff: {
+    label: "/staff",
+    title: "Staff Announcement",
+    message: "Staff have posted a new announcement for the server.",
+    color: "#5865f2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  ticket: {
+    label: "/ticket",
+    title: "Support Ticket",
+    message: "A support ticket panel is ready. Use this for staff help and service requests.",
+    color: "#64d8ff",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+};
+
 const defaults = {
   main: {
     serverName: "Logic RP",
@@ -32,6 +145,7 @@ const defaults = {
     customEmbeds: true,
     embedBuilder: true,
     antiRaid: true,
+    commandTemplates: structuredClone(commandTemplateDefaults),
   },
   premium: {
     serverName: "Custom Demo",
@@ -46,10 +160,12 @@ const defaults = {
     customEmbeds: true,
     embedBuilder: true,
     antiRaid: true,
+    commandTemplates: structuredClone(commandTemplateDefaults),
   },
 };
 
 let selectedServer = "main";
+let selectedCommand = "startup";
 let state = loadState();
 let sessionToken = loadSessionToken();
 
@@ -62,6 +178,7 @@ const previewTitle = document.querySelector("#previewTitle");
 const previewMessage = document.querySelector("#previewMessage");
 const previewFooter = document.querySelector("#previewFooter");
 const dashboardStatus = document.querySelector("#dashboardStatus");
+const commandTemplateList = document.querySelector("#commandTemplateList");
 let loggedInGuilds = [];
 
 function loadState() {
@@ -88,7 +205,21 @@ function loadSessionToken() {
 }
 
 function currentBot() {
+  ensureCommandTemplates(state[selectedServer]);
   return state[selectedServer];
+}
+
+function ensureCommandTemplates(bot) {
+  bot.commandTemplates = {
+    ...structuredClone(commandTemplateDefaults),
+    ...(bot.commandTemplates ?? {}),
+  };
+  Object.keys(commandTemplateDefaults).forEach((key) => {
+    bot.commandTemplates[key] = {
+      ...commandTemplateDefaults[key],
+      ...(bot.commandTemplates[key] ?? {}),
+    };
+  });
 }
 
 function setServer(serverId) {
@@ -132,6 +263,8 @@ function renderDashboard() {
   form.elements.customEmbeds.checked = bot.customEmbeds;
   form.elements.embedBuilder.checked = bot.embedBuilder;
   form.elements.antiRaid.checked = bot.antiRaid;
+  renderCommandTemplateList();
+  renderCommandTemplateFields();
 
   document.querySelectorAll("[data-plan]").forEach((button) => {
     button.classList.toggle("active", button.dataset.plan === bot.plan);
@@ -158,10 +291,11 @@ function renderDashboard() {
 
 function updatePreview() {
   const bot = currentBot();
-  const color = form.elements.embedColor.value;
-  const title = form.elements.embedTitle.value;
-  const message = form.elements.embedMessage.value;
-  const footer = form.elements.footerText.value;
+  const template = bot.commandTemplates[selectedCommand];
+  const color = template?.color || form.elements.embedColor.value;
+  const title = template?.title || form.elements.embedTitle.value;
+  const message = template?.message || form.elements.embedMessage.value;
+  const footer = template?.footer || form.elements.footerText.value;
 
   previewColor.style.background = color;
   previewTitle.textContent = title || "Untitled Embed";
@@ -182,6 +316,55 @@ function collectForm() {
   bot.customEmbeds = form.elements.customEmbeds.checked;
   bot.embedBuilder = form.elements.embedBuilder.checked;
   bot.antiRaid = form.elements.antiRaid.checked;
+  collectCommandTemplate();
+}
+
+function renderCommandTemplateList() {
+  if (!commandTemplateList) return;
+  commandTemplateList.innerHTML = "";
+  Object.entries(commandTemplateDefaults).forEach(([key, template]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "command-template-tab";
+    button.dataset.commandTemplate = key;
+    button.classList.toggle("active", key === selectedCommand);
+    button.innerHTML = `<span>${template.label}</span><small>${currentBot().commandTemplates[key]?.enabled === false ? "Off" : "Editable"}</small>`;
+    button.addEventListener("click", () => {
+      collectCommandTemplate();
+      selectedCommand = key;
+      renderCommandTemplateList();
+      renderCommandTemplateFields();
+      updatePreview();
+    });
+    commandTemplateList.append(button);
+  });
+}
+
+function renderCommandTemplateFields() {
+  const template = currentBot().commandTemplates[selectedCommand];
+  if (!template || !form.elements.commandTitle) return;
+  form.elements.commandTitle.value = template.title;
+  form.elements.commandMessage.value = template.message;
+  form.elements.commandColor.value = template.color;
+  form.elements.commandFooter.value = template.footer;
+  form.elements.commandPingRole.value = template.pingRole;
+  form.elements.commandChannel.value = template.channel;
+  form.elements.commandCooldown.value = template.cooldown;
+  form.elements.commandEnabled.checked = template.enabled !== false;
+}
+
+function collectCommandTemplate() {
+  if (!form.elements.commandTitle) return;
+  const bot = currentBot();
+  const template = bot.commandTemplates[selectedCommand];
+  template.title = form.elements.commandTitle.value.trim() || commandTemplateDefaults[selectedCommand].title;
+  template.message = form.elements.commandMessage.value.trim() || commandTemplateDefaults[selectedCommand].message;
+  template.color = form.elements.commandColor.value;
+  template.footer = form.elements.commandFooter.value.trim() || "Powered by Logic Systems";
+  template.pingRole = form.elements.commandPingRole.value.trim();
+  template.channel = form.elements.commandChannel.value.trim();
+  template.cooldown = form.elements.commandCooldown.value.trim() || "0";
+  template.enabled = form.elements.commandEnabled.checked;
 }
 
 document.querySelectorAll(".server-card").forEach((card) => {
@@ -319,7 +502,9 @@ async function loadGuildSettings(guild) {
     customEmbeds: Boolean(settings.customEmbeds),
     embedBuilder: true,
     antiRaid: true,
+    commandTemplates: settings.commandTemplates ?? structuredClone(commandTemplateDefaults),
   };
+  ensureCommandTemplates(state[guild.id]);
   saveState();
   renderDashboard();
 }
@@ -339,6 +524,7 @@ async function saveDashboardSettings() {
       embedColor: bot.embedColor,
       footerText: bot.footerText,
       customEmbeds: bot.customEmbeds,
+      commandTemplates: bot.commandTemplates,
     });
     Object.assign(bot, result.settings);
     saveState();

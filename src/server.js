@@ -157,9 +157,10 @@ export function createServer() {
       return;
     }
 
+    const settings = await getGuildSettings(request.params.guildId);
     response.json({
       premium: await isPremiumGuild(request.params.guildId),
-      settings: (await getGuildSettings(request.params.guildId)) ?? defaultSettings,
+      settings: mergeSettings(settings),
     });
   });
 
@@ -251,6 +252,108 @@ const defaultSettings = {
   embedColor: "#5865f2",
   footerText: "Logic Systems Custom",
   customEmbeds: true,
+  commandTemplates: {
+    startup: {
+      title: "Session Startup",
+      message: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
+      color: "#5865f2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "10",
+      enabled: true,
+    },
+    release: {
+      title: "Session Release",
+      message: "The roleplay session has been released. Check the details below and join when ready.",
+      color: "#23c46e",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    reinvites: {
+      title: "Reinvites Open",
+      message: "Reinvites are open for this session. Use the details below to return to roleplay.",
+      color: "#64d8ff",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "5",
+      enabled: true,
+    },
+    ea: {
+      title: "Early Access",
+      message: "Early access is now open. Staff may use this post for limited session entry.",
+      color: "#f2c94c",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    over: {
+      title: "Session Over",
+      message: "The roleplay session is now over. Thank you for joining.",
+      color: "#ff6b6b",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    peacetime: {
+      title: "Peacetime Status",
+      message: "Peacetime status has been updated for the server.",
+      color: "#9b8cff",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    priority: {
+      title: "Priority Status",
+      message: "Priority status has been updated. Follow staff directions before starting scenes.",
+      color: "#ff9f43",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    scene: {
+      title: "Scene Update",
+      message: "A new scene update has been posted. Use the details below for location and instructions.",
+      color: "#76f0d2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    staff: {
+      title: "Staff Announcement",
+      message: "Staff have posted a new announcement for the server.",
+      color: "#5865f2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    ticket: {
+      title: "Support Ticket",
+      message: "A support ticket panel is ready. Use this for staff help and service requests.",
+      color: "#64d8ff",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+  },
 };
 
 function sanitizeSettings(body) {
@@ -260,7 +363,37 @@ function sanitizeSettings(body) {
     embedColor: /^#[0-9a-f]{6}$/i.test(body.embedColor) ? body.embedColor : "#5865f2",
     footerText: cleanText(body.footerText, "Logic Systems Custom", 120),
     customEmbeds: Boolean(body.customEmbeds),
+    commandTemplates: sanitizeCommandTemplates(body.commandTemplates),
   };
+}
+
+function mergeSettings(settings = {}) {
+  return {
+    ...defaultSettings,
+    ...(settings ?? {}),
+    commandTemplates: sanitizeCommandTemplates(settings?.commandTemplates),
+  };
+}
+
+function sanitizeCommandTemplates(templates = {}) {
+  return Object.fromEntries(
+    Object.entries(defaultSettings.commandTemplates).map(([name, defaults]) => {
+      const template = templates?.[name] ?? {};
+      return [
+        name,
+        {
+          title: cleanText(template.title, defaults.title, 120),
+          message: cleanText(template.message, defaults.message, 1000),
+          color: /^#[0-9a-f]{6}$/i.test(template.color) ? template.color : defaults.color,
+          footer: cleanText(template.footer, defaults.footer, 120),
+          pingRole: cleanText(template.pingRole, "", 80),
+          channel: cleanText(template.channel, "", 80),
+          cooldown: cleanText(template.cooldown, defaults.cooldown, 8),
+          enabled: template.enabled !== false,
+        },
+      ];
+    }),
+  );
 }
 
 function cleanText(value, fallback, maxLength) {

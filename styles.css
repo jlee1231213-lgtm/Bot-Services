@@ -618,6 +618,78 @@ a {
   accent-color: var(--brand);
 }
 
+.command-template-panel {
+  margin-top: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.subsection-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.subsection-head h4 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.25rem;
+}
+
+.subsection-head span {
+  color: var(--muted);
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.command-template-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.command-template-tab {
+  min-height: 58px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  padding: 9px;
+  color: #ffffff;
+  background: rgba(7, 8, 13, 0.34);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.command-template-tab.active {
+  border-color: rgba(100, 216, 255, 0.56);
+  background: rgba(88, 101, 242, 0.22);
+}
+
+.command-template-tab span,
+.command-template-tab small {
+  display: block;
+}
+
+.command-template-tab span {
+  font-weight: 950;
+}
+
+.command-template-tab small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.command-enabled {
+  margin-top: 14px;
+}
+
 .embed-preview {
   display: grid;
   grid-template-columns: 7px 1fr;
@@ -707,8 +779,17 @@ a {
   .tool-strip,
   .tool-grid,
   .command-board,
+  .command-template-grid,
   .field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .subsection-head {
+    display: grid;
+  }
+
+  .subsection-head span {
+    white-space: normal;
   }
 
   .tool-card.featured {
