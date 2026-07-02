@@ -8,7 +8,7 @@ const inviteUrl =
     ? "#"
     : `https://discord.com/oauth2/authorize?client_id=${BOT_CLIENT_ID}&permissions=8&scope=bot%20applications.commands`;
 
-document.querySelectorAll("#inviteButton, #inviteButtonBottom").forEach((button) => {
+document.querySelectorAll("#inviteButton, #inviteButtonHero, #inviteButtonBottom").forEach((button) => {
   button.href = inviteUrl;
   if (inviteUrl === "#") {
     button.addEventListener("click", (event) => {
