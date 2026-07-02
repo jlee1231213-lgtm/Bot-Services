@@ -1,9 +1,6 @@
 const BOT_CLIENT_ID = "1507551249204117535";
 const STORAGE_KEY = "logic-systems-dashboard";
 const SESSION_STORAGE_KEY = "logic-systems-session";
-const PADDLE_CLIENT_TOKEN = "live_dc4683003cbffc6a174bbe866a3";
-const PADDLE_PRICE_ID = "pri_01ks9d2ry6by4xvfrjf0xad17t";
-const PADDLE_ENVIRONMENT = "production";
 const BACKEND_URL = "https://bot-services-uvwb.onrender.com";
 
 const inviteUrl =
@@ -24,28 +21,28 @@ document.querySelectorAll("#inviteButton, #inviteButtonBottom").forEach((button)
 const defaults = {
   main: {
     serverName: "Logic RP",
-    plan: "free",
-    botName: "Logic RP",
+    plan: "premium",
+    botName: "Logic Systems",
     guildId: "",
     prefix: "/",
     embedTitle: "Session Startup",
-    embedMessage: "A new roleplay session is starting. Join up and follow the server rules.",
+    embedMessage: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
     embedColor: "#3c43ec",
     footerText: "Powered by Logic Systems",
-    customEmbeds: false,
-    embedBuilder: false,
-    antiRaid: false,
+    customEmbeds: true,
+    embedBuilder: true,
+    antiRaid: true,
   },
   premium: {
-    serverName: "Premium Demo",
+    serverName: "Custom Demo",
     plan: "premium",
-    botName: "Premium Demo",
+    botName: "Logic Custom",
     guildId: "",
     prefix: "/",
-    embedTitle: "Premium Session",
-    embedMessage: "Your custom premium embed is ready for startup, release, reinvites, or over commands.",
+    embedTitle: "Custom Session",
+    embedMessage: "Your custom Logic Systems service embed is ready for startup, release, reinvites, or staff announcements.",
     embedColor: "#76f0d2",
-    footerText: "Logic Systems Premium",
+    footerText: "Logic Systems Custom",
     customEmbeds: true,
     embedBuilder: true,
     antiRaid: true,
@@ -103,20 +100,16 @@ function setServer(serverId) {
 }
 
 function setPlan(plan) {
-  if (plan === "premium") {
-    openPremiumCheckout();
-    return;
-  }
-
   currentBot().plan = plan;
   if (plan === "free") {
     currentBot().footerText = "Powered by Logic Systems";
-    currentBot().customEmbeds = false;
-    currentBot().embedBuilder = false;
-    currentBot().antiRaid = false;
+    currentBot().customEmbeds = true;
+    currentBot().embedBuilder = true;
+    currentBot().antiRaid = true;
   } else {
     currentBot().customEmbeds = true;
     currentBot().embedBuilder = true;
+    currentBot().antiRaid = true;
   }
   saveState();
   renderDashboard();
@@ -127,7 +120,7 @@ function renderDashboard() {
   const isPremium = bot.plan === "premium";
 
   selectedServerName.textContent = bot.serverName;
-  mainPlanLabel.textContent = `${state.main.plan === "premium" ? "Premium" : "Free"} plan`;
+  mainPlanLabel.textContent = state.main.plan === "premium" ? "Free custom tools" : "Free service";
 
   form.elements.botName.value = bot.botName;
   form.elements.guildId.value = bot.guildId;
@@ -144,34 +137,31 @@ function renderDashboard() {
     button.classList.toggle("active", button.dataset.plan === bot.plan);
   });
 
-  form.elements.embedTitle.disabled = !isPremium;
-  form.elements.embedMessage.disabled = !isPremium;
-  form.elements.embedColor.disabled = !isPremium;
-  form.elements.footerText.disabled = !isPremium;
-  form.elements.customEmbeds.disabled = !isPremium;
-  form.elements.embedBuilder.disabled = !isPremium;
-  form.elements.antiRaid.disabled = !isPremium;
+  form.elements.embedTitle.disabled = false;
+  form.elements.embedMessage.disabled = false;
+  form.elements.embedColor.disabled = false;
+  form.elements.footerText.disabled = false;
+  form.elements.customEmbeds.disabled = false;
+  form.elements.embedBuilder.disabled = false;
+  form.elements.antiRaid.disabled = false;
 
   document.querySelectorAll(".toggle-row").forEach((row) => {
-    row.classList.toggle("locked", !isPremium);
+    row.classList.remove("locked");
   });
 
   planNotice.textContent = isPremium
-    ? "Premium is active: custom embeds, in-bot embed building, footer editing, and anti-raid protection are unlocked."
-    : "Free plan is active: basic roleplay commands work, and embeds keep the Logic Systems footer. Premium tools unlock after payment.";
+    ? "Free custom tools are active: branded embeds, in-bot embed building, footer editing, and anti-raid status are unlocked."
+    : "Free service is active: roleplay commands, custom embeds, dashboard controls, and staff tools are available.";
 
   updatePreview();
 }
 
 function updatePreview() {
   const bot = currentBot();
-  const isPremium = bot.plan === "premium";
-  const color = isPremium ? form.elements.embedColor.value : "#3c43ec";
-  const title = isPremium ? form.elements.embedTitle.value : "Logic Systems Embed";
-  const message = isPremium
-    ? form.elements.embedMessage.value
-    : "Free plan embeds use the standard Logic Systems style for startup, EA, setup, release, reinvites, and over commands.";
-  const footer = isPremium ? form.elements.footerText.value : "Powered by Logic Systems";
+  const color = form.elements.embedColor.value;
+  const title = form.elements.embedTitle.value;
+  const message = form.elements.embedMessage.value;
+  const footer = form.elements.footerText.value;
 
   previewColor.style.background = color;
   previewTitle.textContent = title || "Untitled Embed";
@@ -185,15 +175,13 @@ function collectForm() {
   bot.guildId = form.elements.guildId.value.trim();
   bot.prefix = form.elements.prefix.value.trim() || "/";
 
-  if (bot.plan === "premium") {
-    bot.embedTitle = form.elements.embedTitle.value.trim() || "Untitled Embed";
-    bot.embedMessage = form.elements.embedMessage.value.trim() || "Embed message preview";
-    bot.embedColor = form.elements.embedColor.value;
-    bot.footerText = form.elements.footerText.value.trim() || "Logic Systems Premium";
-    bot.customEmbeds = form.elements.customEmbeds.checked;
-    bot.embedBuilder = form.elements.embedBuilder.checked;
-    bot.antiRaid = form.elements.antiRaid.checked;
-  }
+  bot.embedTitle = form.elements.embedTitle.value.trim() || "Untitled Embed";
+  bot.embedMessage = form.elements.embedMessage.value.trim() || "Embed message preview";
+  bot.embedColor = form.elements.embedColor.value;
+  bot.footerText = form.elements.footerText.value.trim() || "Powered by Logic Systems";
+  bot.customEmbeds = form.elements.customEmbeds.checked;
+  bot.embedBuilder = form.elements.embedBuilder.checked;
+  bot.antiRaid = form.elements.antiRaid.checked;
 }
 
 document.querySelectorAll(".server-card").forEach((card) => {
@@ -205,72 +193,27 @@ document.querySelectorAll("[data-plan]").forEach((button) => {
 });
 
 document.querySelectorAll("[data-plan-jump]").forEach((button) => {
-  button.href = "#premium";
+  button.href = "#dashboard";
   button.addEventListener("click", (event) => {
     event.preventDefault();
-    openPremiumCheckout();
+    setPlan("premium");
+    document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth" });
   });
 });
 
 const upgradeButton = document.querySelector("#upgradeButton");
 if (upgradeButton) {
-  upgradeButton.href = "#premium";
+  upgradeButton.href = "#free";
   upgradeButton.addEventListener("click", (event) => {
     event.preventDefault();
-    openPremiumCheckout();
+    setPlan("premium");
+    document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth" });
   });
 }
 
 function openPremiumCheckout() {
-  collectForm();
-  saveState();
-
-  if (PADDLE_CLIENT_TOKEN === "YOUR_PADDLE_CLIENT_TOKEN") {
-    alert("Add your Paddle client-side token in script.js to enable Premium checkout.");
-    document.querySelector("#premium").scrollIntoView({ behavior: "smooth" });
-    return;
-  }
-
-  if (!currentBot().guildId) {
-    alert("Paste your Discord server ID in the dashboard before buying Premium.");
-    document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth" });
-    form.elements.guildId.focus();
-    return;
-  }
-
-  if (!window.Paddle) {
-    alert("Paddle checkout did not load yet. Refresh the page and try again.");
-    return;
-  }
-
-  if (!window.logicPaddleReady) {
-    if (PADDLE_ENVIRONMENT === "sandbox" && window.Paddle.Environment) {
-      window.Paddle.Environment.set("sandbox");
-    }
-
-    window.Paddle.Initialize({
-      token: PADDLE_CLIENT_TOKEN,
-      eventCallback(event) {
-        if (event.name === "checkout.completed") {
-          alert("Payment complete. Premium access still needs to be activated by Logic Systems.");
-        }
-      },
-    });
-    window.logicPaddleReady = true;
-  }
-
-  window.Paddle.Checkout.open({
-    customData: {
-      guildId: currentBot().guildId,
-      botName: currentBot().botName,
-    },
-    items: [
-      {
-        priceId: PADDLE_PRICE_ID,
-        quantity: 1,
-      },
-    ],
-  });
+  setPlan("premium");
+  document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth" });
 }
 
 form.addEventListener("input", () => {
@@ -306,7 +249,7 @@ async function initDiscordDashboard() {
 
   if (BACKEND_URL === "YOUR_BACKEND_URL") return;
   if (!sessionToken) {
-    setDashboardStatus("Sign in with Discord to load your servers.");
+    setDashboardStatus("Sign in with Discord to load your servers and service settings.");
     return;
   }
 
@@ -318,7 +261,7 @@ async function initDiscordDashboard() {
     const { guilds } = await apiGet("/api/guilds");
     loggedInGuilds = guilds;
     renderLoggedInGuilds(guilds);
-    setDashboardStatus(guilds.length ? "Select a Discord server to edit its bot settings." : "No manageable Discord servers found for this Discord account.");
+    setDashboardStatus(guilds.length ? "Select a Discord server to edit its Logic Systems service." : "No manageable Discord servers found for this Discord account.");
   } catch {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     sessionToken = null;
@@ -350,7 +293,7 @@ function renderLoggedInGuilds(guilds) {
     card.type = "button";
     card.dataset.server = guild.id;
     card.dataset.discordGuild = "true";
-    card.innerHTML = `<span>${guild.name}</span><small>${guild.premium ? "Premium plan" : "Free plan"}</small>`;
+    card.innerHTML = `<span>${guild.name}</span><small>Free service</small>`;
     card.addEventListener("click", async () => {
       selectedServer = guild.id;
       document.querySelectorAll(".server-card").forEach((item) => item.classList.toggle("active", item === card));
@@ -364,7 +307,7 @@ async function loadGuildSettings(guild) {
   const { premium, settings } = await apiGet(`/api/guilds/${guild.id}/settings`);
   state[guild.id] = {
     serverName: guild.name,
-    plan: premium ? "premium" : "free",
+    plan: premium ? "premium" : "premium",
     botName: guild.name,
     guildId: guild.id,
     prefix: "/",
@@ -373,8 +316,8 @@ async function loadGuildSettings(guild) {
     embedColor: settings.embedColor,
     footerText: settings.footerText,
     customEmbeds: Boolean(settings.customEmbeds),
-    embedBuilder: premium,
-    antiRaid: premium,
+    embedBuilder: true,
+    antiRaid: true,
   };
   saveState();
   renderDashboard();

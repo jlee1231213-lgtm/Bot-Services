@@ -1,7 +1,7 @@
 import { Client, EmbedBuilder, GatewayIntentBits } from "discord.js";
-import { getGuildSettings, isPremiumGuild } from "./store.js";
+import { getGuildSettings } from "./store.js";
 
-const brandColor = 0x3c43ec;
+const brandColor = 0x5865f2;
 
 export function createBot() {
   const client = new Client({
@@ -19,13 +19,13 @@ export function createBot() {
 
     try {
       const handlers = {
-        startup: () => standardEmbed(interaction.guildId, "Session Startup", withNotes(interaction, "A new roleplay session is starting. Join up and follow the server rules.")),
-        ea: () => standardEmbed(interaction.guildId, "Early Access", "Early access is now open for approved members."),
-        setup: () => standardEmbed(interaction.guildId, "Setup", "Use Logic Systems commands for startup, EA, release, reinvites, and session over messages."),
-        release: () => standardEmbed(interaction.guildId, "Release", withNotes(interaction, "The roleplay session has been released. Have fun and follow the rules.")),
-        reinvites: () => standardEmbed(interaction.guildId, "Reinvites", withNotes(interaction, "Reinvites are open. Use the server instructions to rejoin.")),
-        over: () => standardEmbed(interaction.guildId, "Session Over", withNotes(interaction, "The roleplay session is now over. Thanks for joining.")),
-        rules: () => standardEmbed(interaction.guildId, "Roleplay Rules", "Follow staff instructions, stay in character, avoid fail roleplay, and keep the session fair for everyone."),
+        startup: () => standardEmbed(interaction.guildId, "Session Startup", withNotes(interaction, "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.")),
+        ea: () => standardEmbed(interaction.guildId, "Early Access", "Early access is now open for approved members. Prepare your characters and wait for staff direction."),
+        setup: () => standardEmbed(interaction.guildId, "Logic Systems Setup", "Use Logic Systems for startup, EA, release, reinvites, peacetime, priority, staff notices, and session over messages."),
+        release: () => standardEmbed(interaction.guildId, "Session Release", withNotes(interaction, "The roleplay session has been released. Have fun, stay realistic, and follow the rules.")),
+        reinvites: () => standardEmbed(interaction.guildId, "Reinvites Open", withNotes(interaction, "Reinvites are open. Use the server instructions to rejoin cleanly.")),
+        over: () => standardEmbed(interaction.guildId, "Session Over", withNotes(interaction, "The roleplay session is now over. Thanks for joining the session.")),
+        rules: () => standardEmbed(interaction.guildId, "Roleplay Rules", "Follow staff instructions, stay in character, avoid fail roleplay, and keep every scene fair for everyone."),
         ssu: () => standardEmbed(interaction.guildId, "Server Startup", interaction.options.getString("notes") ?? "Server startup is now active. Join up and prepare for roleplay."),
       };
 
@@ -50,9 +50,9 @@ async function handleCommand(interaction) {
         embeds: [
           new EmbedBuilder()
             .setColor(brandColor)
-            .setTitle("Logic Systems Commands")
-            .setDescription("Free: `/startup`, `/ea`, `/setup`, `/release`, `/reinvites`, `/over`, `/rules`, `/peacetime`, `/priority`, `/scene`, `/staff`, `/ssu`, `/vote`, `/status`\nPremium: `/embed`, `/announce`, `/antiraid`, dashboard embed customization.")
-            .setFooter({ text: "Logic Systems" }),
+            .setTitle("Logic Systems Service")
+            .setDescription("Free commands: `/startup`, `/ea`, `/setup`, `/release`, `/reinvites`, `/over`, `/rules`, `/peacetime`, `/priority`, `/scene`, `/staff`, `/ssu`, `/vote`, `/status`, `/embed`, `/announce`, `/antiraid`\nDashboard: free embed customization and server setup.")
+            .setFooter({ text: "Powering Roblox Roleplay" }),
         ],
         ephemeral: true,
       });
@@ -60,14 +60,13 @@ async function handleCommand(interaction) {
     }
 
     if (interaction.commandName === "status") {
-      const hasPremium = await isPremiumGuild(interaction.guildId);
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setColor(hasPremium ? 0x76f0d2 : brandColor)
+            .setColor(0x76f0d2)
             .setTitle("Logic Systems Status")
-            .setDescription(`Bot is online.\nPlan: ${hasPremium ? "Premium" : "Free"}`)
-            .setFooter({ text: hasPremium ? "Logic Systems Premium" : "Powered by Logic Systems" }),
+            .setDescription("Service is online.\nPackage: Free Custom Bot")
+            .setFooter({ text: "Logic Systems Free" }),
         ],
         ephemeral: true,
       });
@@ -132,8 +131,6 @@ async function handleCommand(interaction) {
     }
 
     if (interaction.commandName === "embed") {
-      if (!(await ensurePremium(interaction))) return;
-
       const title = interaction.options.getString("title", true);
       const message = interaction.options.getString("message", true);
       const color = parseHexColor(interaction.options.getString("color")) ?? brandColor;
@@ -144,15 +141,13 @@ async function handleCommand(interaction) {
             .setColor(color)
             .setTitle(title)
             .setDescription(message)
-            .setFooter({ text: "Logic Systems Premium" }),
+            .setFooter({ text: "Logic Systems Free" }),
         ],
       });
       return;
     }
 
     if (interaction.commandName === "announce") {
-      if (!(await ensurePremium(interaction))) return;
-
       const settings = await getGuildSettings(interaction.guildId);
       const title = interaction.options.getString("title", true);
       const message = interaction.options.getString("message", true);
@@ -163,22 +158,20 @@ async function handleCommand(interaction) {
             .setColor(parseHexColor(settings?.embedColor) ?? brandColor)
             .setTitle(title)
             .setDescription(message)
-            .setFooter({ text: settings?.footerText ?? "Logic Systems Premium" }),
+            .setFooter({ text: settings?.footerText ?? "Logic Systems Free" }),
         ],
       });
       return;
     }
 
     if (interaction.commandName === "antiraid") {
-      if (!(await ensurePremium(interaction))) return;
-
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setColor(0x76f0d2)
             .setTitle("Anti-Raid Protection")
-            .setDescription("Premium anti-raid protection is enabled for this server.")
-            .setFooter({ text: "Logic Systems Premium" }),
+            .setDescription("Free anti-raid status tools are enabled for this server.")
+            .setFooter({ text: "Logic Systems Free" }),
         ],
         ephemeral: true,
       });
@@ -191,25 +184,13 @@ function withNotes(interaction, fallback) {
 }
 
 async function standardEmbed(guildId, title, description) {
-  const hasPremium = await isPremiumGuild(guildId);
-  const settings = hasPremium ? await getGuildSettings(guildId) : null;
+  const settings = await getGuildSettings(guildId);
 
   return new EmbedBuilder()
     .setColor(parseHexColor(settings?.embedColor) ?? brandColor)
     .setTitle(settings?.customEmbeds ? settings.embedTitle : title)
     .setDescription(settings?.customEmbeds ? settings.embedMessage : description)
-    .setFooter({ text: hasPremium ? (settings?.footerText ?? "Logic Systems Premium") : "Powered by Logic Systems" });
-}
-
-async function ensurePremium(interaction) {
-  const hasPremium = await isPremiumGuild(interaction.guildId);
-  if (hasPremium) return true;
-
-  await interaction.reply({
-    content: "This command requires Logic Premium. Use the Premium button on the Logic Systems website to upgrade.",
-    ephemeral: true,
-  });
-  return false;
+    .setFooter({ text: settings?.footerText ?? "Powered by Logic Systems" });
 }
 
 async function sendCommandError(interaction) {

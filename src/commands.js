@@ -33,10 +33,10 @@ export const commands = [
     ),
   new SlashCommandBuilder()
     .setName("help")
-    .setDescription("Show Logic Systems commands and plan info."),
+    .setDescription("Show Logic Systems free commands and service info."),
   new SlashCommandBuilder()
     .setName("status")
-    .setDescription("Check the bot and premium status for this server."),
+    .setDescription("Check the bot and free service status for this server."),
   new SlashCommandBuilder()
     .setName("rules")
     .setDescription("Post a clean roleplay rules reminder."),
@@ -96,7 +96,7 @@ export const commands = [
     ),
   new SlashCommandBuilder()
     .setName("embed")
-    .setDescription("Premium: create a custom embed.")
+    .setDescription("Create a free custom embed.")
     .addStringOption((option) =>
       option.setName("title").setDescription("Embed title").setRequired(true),
     )
@@ -108,10 +108,10 @@ export const commands = [
     ),
   new SlashCommandBuilder()
     .setName("antiraid")
-    .setDescription("Premium: check anti-raid protection status."),
+    .setDescription("Check free anti-raid protection status."),
   new SlashCommandBuilder()
     .setName("announce")
-    .setDescription("Premium: post a custom announcement embed.")
+    .setDescription("Post a free custom announcement embed.")
     .addStringOption((option) =>
       option.setName("title").setDescription("Announcement title").setRequired(true),
     )

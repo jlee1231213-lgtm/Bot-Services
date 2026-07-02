@@ -166,11 +166,6 @@ export function createServer() {
       response.status(403).json({ error: "You cannot manage this server." });
       return;
     }
-    if (!(await isPremiumGuild(request.params.guildId))) {
-      response.status(402).json({ error: "Premium is required to edit embeds." });
-      return;
-    }
-
     const settings = sanitizeSettings(request.body);
     await setGuildSettings(request.params.guildId, settings);
     response.json({ ok: true, settings });
@@ -248,9 +243,9 @@ export function createServer() {
 
 const defaultSettings = {
   embedTitle: "Session Startup",
-  embedMessage: "A new roleplay session is starting. Join up and follow the server rules.",
-  embedColor: "#3c43ec",
-  footerText: "Logic Systems Premium",
+  embedMessage: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
+  embedColor: "#5865f2",
+  footerText: "Logic Systems Custom",
   customEmbeds: true,
 };
 
@@ -258,8 +253,8 @@ function sanitizeSettings(body) {
   return {
     embedTitle: cleanText(body.embedTitle, "Session Startup", 120),
     embedMessage: cleanText(body.embedMessage, "A new roleplay session is starting.", 1000),
-    embedColor: /^#[0-9a-f]{6}$/i.test(body.embedColor) ? body.embedColor : "#3c43ec",
-    footerText: cleanText(body.footerText, "Logic Systems Premium", 120),
+    embedColor: /^#[0-9a-f]{6}$/i.test(body.embedColor) ? body.embedColor : "#5865f2",
+    footerText: cleanText(body.footerText, "Logic Systems Custom", 120),
     customEmbeds: Boolean(body.customEmbeds),
   };
 }
