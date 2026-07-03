@@ -142,42 +142,81 @@ export function createServer() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Owner Dashboard</title>
+        <title>Logic Systems • Owner Dashboard</title>
         <style>
           body {
-            font-family: Arial, sans-serif;
-            background: #0f0f14;
-            color: #ffffff;
             margin: 0;
-            padding: 0;
+            font-family: Arial, sans-serif;
+            background: radial-gradient(circle at top, #1b1b2a, #0f0f14);
+            color: #ffffff;
+          }
+
+          .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 220px;
+            background: #141420;
+            padding: 20px;
+            box-sizing: border-box;
+          }
+
+          .brand {
+            font-size: 18px;
+            font-weight: bold;
+            color: #5865f2;
+            margin-bottom: 30px;
+          }
+
+          .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .nav div {
+            padding: 10px;
+            border-radius: 8px;
+            background: #1a1a22;
+            cursor: pointer;
+            font-size: 14px;
+          }
+
+          .nav div:hover {
+            background: #2a2a3a;
+          }
+
+          .main {
+            margin-left: 240px;
+            padding: 25px;
           }
 
           .topbar {
-            background: #1a1a22;
-            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
           }
 
           .badge {
             background: #5865f2;
             padding: 5px 10px;
-            border-radius: 6px;
+            border-radius: 999px;
             font-size: 12px;
           }
 
-          .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 20px;
+          .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
           }
 
           .card {
             background: #1a1a22;
             padding: 20px;
             border-radius: 12px;
-            margin-bottom: 15px;
+            border: 1px solid #2a2a3a;
           }
 
           input, button {
@@ -193,54 +232,71 @@ export function createServer() {
             background: #5865f2;
             color: white;
             cursor: pointer;
+            transition: 0.2s;
           }
 
           button:hover {
             background: #4752c4;
-          }
-
-          .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            transform: translateY(-1px);
           }
 
           pre {
-            background: #111;
-            padding: 10px;
+            background: #0e0e14;
+            padding: 12px;
             border-radius: 8px;
             overflow: auto;
+            border: 1px solid #2a2a3a;
           }
 
-          .muted {
-            opacity: 0.7;
+          .title {
+            font-size: 20px;
+            font-weight: bold;
+          }
+
+          .sub {
             font-size: 13px;
+            opacity: 0.7;
+            margin-top: 4px;
           }
         </style>
       </head>
 
       <body>
-        <div class="topbar">
-          <div><b>Owner Dashboard</b></div>
-          <div class="badge">LIVE</div>
+
+        <div class="sidebar">
+          <div class="brand">Logic Systems</div>
+          <div class="nav">
+            <div onclick="loadMe()">Session</div>
+            <div onclick="document.getElementById('code').focus()">Support Lookup</div>
+            <div onclick="location.reload()">Refresh</div>
+          </div>
         </div>
 
-        <div class="container">
+        <div class="main">
 
-          <div class="card">
-            <h3>Session Info</h3>
-            <button onclick="loadMe()">Load My Session</button>
-            <pre id="me">Click above to load session info</pre>
+          <div class="topbar">
+            <div>
+              <div class="title">Owner Dashboard</div>
+              <div class="sub">Secure Admin Control Panel</div>
+            </div>
+            <div class="badge">LIVE</div>
           </div>
 
-          <div class="card">
-            <h3>Support Lookup</h3>
-            <p class="muted">Search users by support code (LS-...)</p>
+          <div class="grid">
 
-            <input id="code" placeholder="Enter Support Code" />
-            <button onclick="search()">Search</button>
+            <div class="card">
+              <h3>Session Info</h3>
+              <button onclick="loadMe()">Load My Session</button>
+              <pre id="me">No session loaded</pre>
+            </div>
 
-            <pre id="result"></pre>
+            <div class="card">
+              <h3>Support Lookup</h3>
+              <input id="code" placeholder="Enter Support Code (LS-...)" />
+              <button onclick="search()">Search</button>
+              <pre id="result"></pre>
+            </div>
+
           </div>
 
         </div>
@@ -248,7 +304,7 @@ export function createServer() {
         <script>
           async function loadMe() {
             const res = await fetch('/api/me', { credentials: 'include' });
-            const data = await res.json();
+            const data = await res.json().catch(() => ({ error: "Failed to load session" }));
             document.getElementById('me').innerText = JSON.stringify(data, null, 2);
           }
 
@@ -257,14 +313,12 @@ export function createServer() {
 
             const res = await fetch('/api/owner/support-access', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
+              headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
               body: JSON.stringify({ supportCode })
             });
 
-            const data = await res.json();
+            const data = await res.json().catch(() => ({ error: "Request failed" }));
             document.getElementById('result').innerText = JSON.stringify(data, null, 2);
           }
         </script>
