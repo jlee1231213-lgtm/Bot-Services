@@ -454,5 +454,38 @@
     </div>
 
     <script src="script.js?v=fresh-free-2"></script>
+    <script>
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/me", {
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          const el = document.getElementById("supportCodeText");
+          if (el) el.innerText = "Not signed in";
+          return;
+        }
+
+        const data = await res.json();
+
+        const supportEl = document.getElementById("supportCodeText");
+        if (supportEl) {
+          supportEl.innerText = data.supportCode ?? "N/A";
+        }
+
+        const dashStatus = document.getElementById("dashboardStatus");
+        if (dashStatus && data.user?.username) {
+          dashStatus.innerText = `Signed in as ${data.user.username}`;
+        }
+      } catch (err) {
+        console.error("Failed to load user:", err);
+        const el = document.getElementById("supportCodeText");
+        if (el) el.innerText = "Error loading";
+      }
+    }
+
+    window.addEventListener("load", loadUser);
+    </script>
   </body>
 </html>

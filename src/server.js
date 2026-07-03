@@ -137,12 +137,20 @@ export function createServer() {
     response.json({ ok: true });
   });
 
-  app.get("/api/me", async (request, response) => {
-    const session = await requireSession(request, response);
-    if (!session) return;
-    response.json({ user: session.user });
-  });
+ app.get("/api/me", async (request, response) => {
+  const session = await requireSession(request, response);
 
+  if (!session) {
+    return response.status(401).json({ error: "Not authenticated" });
+  }
+
+  const supportCode = "LOGIC-" + (session.user?.id?.slice(-6) || "000000");
+
+  response.json({
+    user: session.user,
+    supportCode
+  });
+});
   app.get("/api/guilds", async (request, response) => {
     const session = await requireSession(request, response);
     if (!session) return;
