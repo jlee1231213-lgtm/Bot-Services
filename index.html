@@ -456,32 +456,37 @@
     <script src="script.js?v=fresh-free-2"></script>
     <script>
     async function loadUser() {
+      const supportEl = document.getElementById("supportCodeText");
+      const dashStatus = document.getElementById("dashboardStatus");
+
       try {
         const res = await fetch("/api/me", {
           credentials: "include"
         });
 
         if (!res.ok) {
-          const el = document.getElementById("supportCodeText");
-          if (el) el.innerText = "Not signed in";
+          if (supportEl) supportEl.innerText = "Sign in with Discord";
+          if (dashStatus) dashStatus.innerText = "Sign in with Discord to load your servers.";
           return;
         }
 
         const data = await res.json();
 
-        const supportEl = document.getElementById("supportCodeText");
-        if (supportEl) {
-          supportEl.innerText = data.supportCode ?? "N/A";
+        if (data?.user) {
+          if (supportEl) supportEl.innerText = data.supportCode;
+          if (dashStatus) {
+            dashStatus.innerText = `Signed in as ${data.user.username}`;
+          }
+        } else {
+          if (supportEl) supportEl.innerText = "Sign in with Discord";
+          if (dashStatus) dashStatus.innerText = "Sign in with Discord to load your servers.";
         }
 
-        const dashStatus = document.getElementById("dashboardStatus");
-        if (dashStatus && data.user?.username) {
-          dashStatus.innerText = `Signed in as ${data.user.username}`;
-        }
       } catch (err) {
         console.error("Failed to load user:", err);
-        const el = document.getElementById("supportCodeText");
-        if (el) el.innerText = "Error loading";
+
+        if (supportEl) supportEl.innerText = "Error loading";
+        if (dashStatus) dashStatus.innerText = "Error loading session";
       }
     }
 
