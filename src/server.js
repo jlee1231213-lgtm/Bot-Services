@@ -20,6 +20,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function createServer() {
   const app = express();
+  app.set("trust proxy", 1);
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   const port = process.env.PORT ?? 3000;
   const siteUrl = process.env.PUBLIC_SITE_URL ?? `http://localhost:${port}`;
@@ -120,8 +121,8 @@ export function createServer() {
 
     res.cookie("admin_session", session, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
@@ -403,8 +404,8 @@ export function createServer() {
 
       response.cookie("logic_session", sessionId, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       const returnTo = parseOAuthState(request.query.state) ?? "dashboard";
