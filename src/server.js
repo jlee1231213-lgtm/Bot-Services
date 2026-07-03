@@ -142,40 +142,125 @@ export function createServer() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Owner Panel</title>
+        <title>Owner Dashboard</title>
         <style>
-          body { font-family: Arial, sans-serif; background:#0f0f14; color:#fff; padding:20px; }
-          .box { background:#1a1a22; padding:20px; border-radius:12px; max-width:600px; }
-          input, button { padding:10px; margin-top:10px; width:100%; border-radius:8px; border:none; }
-          button { background:#5865f2; color:white; cursor:pointer; }
-          button:hover { background:#4752c4; }
-          .result { margin-top:20px; padding:10px; background:#111; border-radius:8px; }
+          body {
+            font-family: Arial, sans-serif;
+            background: #0f0f14;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+          }
+
+          .topbar {
+            background: #1a1a22;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .badge {
+            background: #5865f2;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+          }
+
+          .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+          }
+
+          .card {
+            background: #1a1a22;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+          }
+
+          input, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+          }
+
+          button {
+            background: #5865f2;
+            color: white;
+            cursor: pointer;
+          }
+
+          button:hover {
+            background: #4752c4;
+          }
+
+          .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+          }
+
+          pre {
+            background: #111;
+            padding: 10px;
+            border-radius: 8px;
+            overflow: auto;
+          }
+
+          .muted {
+            opacity: 0.7;
+            font-size: 13px;
+          }
         </style>
       </head>
+
       <body>
-        <div class="box">
-          <h2>Owner Panel</h2>
-          <p>Search server by Support Code</p>
+        <div class="topbar">
+          <div><b>Owner Dashboard</b></div>
+          <div class="badge">LIVE</div>
+        </div>
 
-          <input id="adminKey" placeholder="Admin Key (required for API calls)" />
-          <input id="code" placeholder="Support Code (LS-...)" />
+        <div class="container">
 
-          <button onclick="search()">Search</button>
+          <div class="card">
+            <h3>Session Info</h3>
+            <button onclick="loadMe()">Load My Session</button>
+            <pre id="me">Click above to load session info</pre>
+          </div>
 
-          <div class="result" id="result"></div>
+          <div class="card">
+            <h3>Support Lookup</h3>
+            <p class="muted">Search users by support code (LS-...)</p>
+
+            <input id="code" placeholder="Enter Support Code" />
+            <button onclick="search()">Search</button>
+
+            <pre id="result"></pre>
+          </div>
+
         </div>
 
         <script>
+          async function loadMe() {
+            const res = await fetch('/api/me', { credentials: 'include' });
+            const data = await res.json();
+            document.getElementById('me').innerText = JSON.stringify(data, null, 2);
+          }
+
           async function search() {
-            const adminKey = document.getElementById('adminKey').value;
             const supportCode = document.getElementById('code').value;
 
             const res = await fetch('/api/owner/support-access', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                'x-admin-key': adminKey
+                'Content-Type': 'application/json'
               },
+              credentials: 'include',
               body: JSON.stringify({ supportCode })
             });
 
@@ -183,6 +268,7 @@ export function createServer() {
             document.getElementById('result').innerText = JSON.stringify(data, null, 2);
           }
         </script>
+
       </body>
       </html>
     `);
