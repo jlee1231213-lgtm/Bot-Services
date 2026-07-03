@@ -40,6 +40,141 @@ export function createServer() {
 
   app.use(express.static(path.join(__dirname, "..")));
 
+  // ===== ADMIN LOGIN PAGE UI =====
+  app.get("/admin/login", (request, response) => {
+    response.type("html").send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Admin Login</title>
+        <style>
+          body { font-family: Arial; background:#0f0f14; color:white; display:flex; align-items:center; justify-content:center; height:100vh; }
+          .box { background:#1a1a22; padding:25px; border-radius:12px; width:320px; }
+          input { width:100%; padding:10px; margin-top:10px; border-radius:8px; border:none; }
+          button { width:100%; padding:10px; margin-top:15px; border-radius:8px; border:none; background:#5865f2; color:white; cursor:pointer; }
+          button:hover { background:#4752c4; }
+          .msg { margin-top:10px; font-size:14px; }
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <h2>Admin Login</h2>
+          <input id="key" placeholder="Enter Admin Key" type="password" />
+          <button onclick="login()">Login</button>
+          <div class="msg" id="msg"></div>
+        </div>
+
+        <script>
+          async function login() {
+            const adminKey = document.getElementById('key').value;
+
+            const res = await fetch('/api/admin/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ adminKey })
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+              document.getElementById('msg').innerText = "Login successful! Redirecting...";
+              setTimeout(() => {
+                window.location.href = "/owner";
+              }, 800);
+            } else {
+              document.getElementById('msg').innerText = data.error || "Login failed";
+            }
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  });
+
+  app.post("/api/admin/login", express.json(), (req, res) => {
+    const adminKey = process.env.ADMIN_KEY;
+    const provided = req.body?.adminKey;
+
+    if (!adminKey || provided !== adminKey) {
+      return res.status(403).json({ error: "Invalid admin key" });
+    }
+
+    const session = createSignedSession({
+      admin: true,
+      ts: Date.now()
+    });
+
+    res.cookie("admin_session", session, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ ok: true });
+  });
+
+  // ===== OWNER PANEL UI =====
+  app.get("/owner", (request, response) => {
+    if (!isOwnerRequest(request)) {
+      response.status(403).send(`
+        <h2>Owner Panel Locked</h2>
+        <p>You must log in via <code>/api/admin/login</code></p>
+      `);
+      return;
+    }
+
+    response.type("html").send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Owner Panel</title>
+        <style>
+          body { font-family: Arial, sans-serif; background:#0f0f14; color:#fff; padding:20px; }
+          .box { background:#1a1a22; padding:20px; border-radius:12px; max-width:600px; }
+          input, button { padding:10px; margin-top:10px; width:100%; border-radius:8px; border:none; }
+          button { background:#5865f2; color:white; cursor:pointer; }
+          button:hover { background:#4752c4; }
+          .result { margin-top:20px; padding:10px; background:#111; border-radius:8px; }
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <h2>Owner Panel</h2>
+          <p>Search server by Support Code</p>
+
+          <input id="adminKey" placeholder="Admin Key (required for API calls)" />
+          <input id="code" placeholder="Support Code (LS-...)" />
+
+          <button onclick="search()">Search</button>
+
+          <div class="result" id="result"></div>
+        </div>
+
+        <script>
+          async function search() {
+            const adminKey = document.getElementById('adminKey').value;
+            const supportCode = document.getElementById('code').value;
+
+            const res = await fetch('/api/owner/support-access', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-admin-key': adminKey
+              },
+              body: JSON.stringify({ supportCode })
+            });
+
+            const data = await res.json();
+            document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  });
+
   app.get("/health", (_request, response) => {
     response.json({ ok: true, service: "logic-systems-bot" });
   });
@@ -144,7 +279,7 @@ export function createServer() {
     return response.status(401).json({ error: "Not authenticated" });
   }
 
-  const supportCode = "LOGIC-" + (session.user?.id?.slice(-6) || "000000");
+  const supportCode = `LS-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
 
   response.json({
     user: session.user,
@@ -312,6 +447,7 @@ export function createServer() {
 
     response.json({ ok: true });
   });
+
 
   return app;
 }
@@ -733,9 +869,16 @@ function sanitizeBotRequest(body = {}) {
   };
 }
 
-function isOwnerRequest(request, adminKeyFromBody = "") {
+function isOwnerRequest(request) {
+  const adminSession = getCookie(request, "admin_session");
+
+  if (adminSession) {
+    const session = verifySignedSession(adminSession);
+    if (session?.admin === true) return true;
+  }
+
   const adminKey = process.env.ADMIN_KEY;
-  return Boolean(adminKey && (request.get("x-admin-key") === adminKey || adminKeyFromBody === adminKey));
+  return Boolean(adminKey && request.get("x-admin-key") === adminKey);
 }
 
 function mergeSettings(settings = {}, guildId = "") {
