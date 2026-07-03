@@ -1,25 +1,25 @@
 import { SlashCommandBuilder } from "discord.js";
-import { buildMessage, standardEmbed } from "./_shared.js";
+import { buildMessage, cleanPing, standardEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("ea")
-  .setDescription("Post a customizable early access roleplay message.")
+  .setDescription("Open early access for approved roleplay members.")
   .addStringOption((option) =>
-    option.setName("host").setDescription("Early access host").setRequired(false),
+    option.setName("host").setDescription("Host running early access.").setRequired(false),
   )
   .addStringOption((option) =>
-    option.setName("ping").setDescription("Ping text, like @here or @EA").setRequired(false),
+    option.setName("ping").setDescription("Role or mention to notify, like @here or @EA.").setRequired(false),
   )
   .addStringOption((option) =>
-    option.setName("notes").setDescription("Extra early access notes").setRequired(false),
+    option.setName("notes").setDescription("Extra early access instructions.").setRequired(false),
   );
 
 export async function execute(interaction) {
-  const description = buildMessage("Early access is now open for approved members. Prepare your characters and wait for staff direction.", [
+  const ping = cleanPing(interaction.options.getString("ping"));
+  const description = buildMessage("Early access is open for approved members. Prepare your character, join calmly, and wait for staff direction.", [
     ["Host", interaction.options.getString("host")],
-    ["Ping", interaction.options.getString("ping")],
     ["Notes", interaction.options.getString("notes")],
   ]);
 
-  await interaction.reply({ embeds: [await standardEmbed(interaction.guildId, "Early Access", description)] });
+  await interaction.reply({ content: ping ?? undefined, embeds: [await standardEmbed(interaction.guildId, "Early Access", description)] });
 }

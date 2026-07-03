@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Logic Systems Free Roleplay Bot</title>
     <meta name="description" content="Logic Systems provides free custom Discord bots for Roblox roleplay servers with startup commands, custom embeds, dashboard controls, and staff tools.">
-    <link rel="stylesheet" href="/styles.css?v=fresh-free-1">
+    <link rel="stylesheet" href="styles.css?v=fresh-free-2">
   </head>
   <body>
     <div class="page-shell">
       <header class="topbar" aria-label="Primary navigation">
         <a class="brand" href="#home" aria-label="Logic Systems home">
-          <img src="/logic-systems-logo.png?v=fresh-free-1" alt="">
+          <img src="logic-systems-logo.png?v=fresh-free-2" alt="">
           <span>Logic Systems</span>
         </a>
 
@@ -39,7 +39,7 @@
               <a class="btn secondary" href="#request">Request Custom Bot</a>
             </div>
             <div class="hero-stats" aria-label="Service stats">
-              <span><strong>18</strong> commands</span>
+              <span><strong>50+</strong> commands</span>
               <span><strong>$0</strong> custom bots</span>
               <span><strong>24/7</strong> ready</span>
             </div>
@@ -48,7 +48,7 @@
           <div class="hero-product" aria-label="Logic Systems preview">
             <div class="bot-card">
               <div class="bot-card-head">
-                <img src="/logic-systems-logo.png?v=fresh-free-1" alt="">
+                <img src="logic-systems-logo.png?v=fresh-free-2" alt="">
                 <div>
                   <strong>Logic Systems</strong>
                   <span>Powering Roblox Roleplay</span>
@@ -139,6 +139,22 @@
             <article>
               <span>/scene</span>
               <p>Post location-based scenes.</p>
+            </article>
+            <article>
+              <span>/modcall</span>
+              <p>Request moderators for active sessions.</p>
+            </article>
+            <article>
+              <span>/lowmod</span>
+              <p>Call for more staff coverage.</p>
+            </article>
+            <article>
+              <span>/fullmod</span>
+              <p>Mark moderation coverage as full.</p>
+            </article>
+            <article>
+              <span>/ssd</span>
+              <p>Announce server shutdown.</p>
             </article>
             <article>
               <span>/staff</span>
@@ -252,6 +268,14 @@
 
               <div class="notice" id="planNotice">
                 Logic Systems is free: roleplay commands, custom embeds, dashboard controls, and staff tools are available.
+              </div>
+
+              <div class="support-code-panel">
+                <span>
+                  <strong>Support number</strong>
+                  <small>Give this to Logic Systems support if you want help editing this server. Never share your Discord login.</small>
+                </span>
+                <code id="supportCodeText">Sign in first</code>
               </div>
 
               <div class="field-grid">
@@ -386,6 +410,34 @@
                 <button class="btn primary" type="submit">Save Changes</button>
                 <a class="btn secondary" href="#" id="upgradeButton">Enable Custom</a>
               </div>
+
+              <div class="owner-support-panel">
+                <div class="subsection-head">
+                  <div>
+                    <p class="eyebrow">Owner Panel</p>
+                    <h4>Customer Support Access</h4>
+                  </div>
+                  <span>Admin key required</span>
+                </div>
+
+                <div id="ownerSupportForm" class="owner-support-form">
+                  <div class="field-grid">
+                    <label>
+                      Owner admin key
+                      <input name="adminKey" type="password" autocomplete="off" placeholder="ADMIN_KEY">
+                    </label>
+                    <label>
+                      Customer support number
+                      <input name="supportCode" type="text" placeholder="LS-123456789012345678">
+                    </label>
+                  </div>
+                  <div class="dashboard-actions">
+                    <button class="btn secondary" type="button" id="ownerOpenButton">Open Customer Dashboard</button>
+                    <button class="btn primary" type="button" id="ownerSaveButton">Save For Customer</button>
+                  </div>
+                  <p class="dashboard-status" id="ownerSupportStatus">Use this only when a customer asks for setup help.</p>
+                </div>
+              </div>
             </form>
           </div>
         </section>
@@ -401,6 +453,6 @@
       </main>
     </div>
 
-    <script src="/script.js?v=fresh-free-1"></script>
+    <script src="script.js?v=fresh-free-2"></script>
   </body>
 </html>

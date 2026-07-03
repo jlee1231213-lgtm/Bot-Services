@@ -1,6 +1,8 @@
 import express from "express";
 import { Environment, EventName, LogLevel, Paddle } from "@paddle/paddle-node-sdk";
 import crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   createBotRequest,
   createSession,
@@ -14,11 +16,14 @@ import {
   setPremiumGuild,
 } from "./store.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 export function createServer() {
   const app = express();
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
-  const siteUrl = process.env.PUBLIC_SITE_URL ?? "http://localhost:5500";
-  const backendUrl = process.env.PUBLIC_BACKEND_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
+  const port = process.env.PORT ?? 3000;
+  const siteUrl = process.env.PUBLIC_SITE_URL ?? `http://localhost:${port}`;
+  const backendUrl = process.env.PUBLIC_BACKEND_URL ?? `http://localhost:${port}`;
 
   app.use((request, response, next) => {
     const origin = getSafeSiteOrigin(request.get("origin")) ?? siteUrl;
@@ -33,24 +38,24 @@ export function createServer() {
     next();
   });
 
+  app.use(express.static(path.join(__dirname, "..")));
+
   app.get("/health", (_request, response) => {
     response.json({ ok: true, service: "logic-systems-bot" });
   });
 
   app.get("/debug/config", (_request, response) => {
+    const clientSecret = cleanEnvValue(process.env.DISCORD_CLIENT_SECRET);
     response.json({
       signedSessions: true,
       hasSessionSecret: Boolean(process.env.SESSION_SECRET),
-      hasDiscordClientSecret: Boolean(process.env.DISCORD_CLIENT_SECRET),
+      discordClientId: cleanEnvValue(process.env.DISCORD_CLIENT_ID) || null,
+      hasDiscordClientSecret: Boolean(clientSecret),
+      discordClientSecretLength: clientSecret.length,
+      discordClientSecretFingerprint: clientSecret ? crypto.createHash("sha256").update(clientSecret).digest("hex").slice(0, 10) : null,
       publicSiteUrl: siteUrl,
       publicBackendUrl: process.env.PUBLIC_BACKEND_URL ?? null,
     });
-  });
-
-  app.get("/", (_request, response) => {
-    response
-      .type("html")
-      .send(`<p>Logic Systems backend is running. Open <a href="${siteUrl}">${siteUrl}</a> for the website.</p>`);
   });
 
   app.get("/auth/discord", (request, response) => {
@@ -61,7 +66,7 @@ export function createServer() {
     }
 
     const requestBackendUrl = getRequestBackendUrl(request, backendUrl);
-    const returnTo = getSafeSiteOrigin(request.query.returnTo);
+    const returnTo = getSafeSiteUrl(request.query.returnTo);
 
     const params = new URLSearchParams({
       client_id: clientId,
@@ -114,8 +119,8 @@ export function createServer() {
         sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      const returnTo = parseOAuthState(request.query.state) ?? siteUrl;
-      response.redirect(`${returnTo}/#dashboard?session=${encodeURIComponent(sessionId)}`);
+      const returnTo = parseOAuthState(request.query.state) ?? "dashboard";
+      response.redirect(`${siteUrl}/#${returnTo}?session=${encodeURIComponent(sessionId)}`);
     } catch (error) {
       console.error("Discord OAuth failed", error);
       response
@@ -162,7 +167,7 @@ export function createServer() {
     const settings = await getGuildSettings(request.params.guildId);
     response.json({
       premium: await isPremiumGuild(request.params.guildId),
-      settings: mergeSettings(settings),
+      settings: mergeSettings(settings, request.params.guildId),
     });
   });
 
@@ -175,7 +180,45 @@ export function createServer() {
     }
     const settings = sanitizeSettings(request.body);
     await setGuildSettings(request.params.guildId, settings);
-    response.json({ ok: true, settings });
+    response.json({ ok: true, settings: mergeSettings(settings, request.params.guildId) });
+  });
+
+  app.post("/api/owner/support-access", express.json(), async (request, response) => {
+    if (!isOwnerRequest(request, request.body?.adminKey)) {
+      response.status(403).json({ error: "Owner access required." });
+      return;
+    }
+
+    const supportCode = cleanSupportCode(request.body?.supportCode);
+    const guildId = cleanText(request.body?.guildId, "", 40);
+    const targetGuildId = guildId || decodeSupportCode(supportCode);
+    if (!targetGuildId || supportCodeForGuild(targetGuildId) !== supportCode) {
+      response.status(404).json({ error: "No server found for that support code." });
+      return;
+    }
+
+    response.json({
+      guildId: targetGuildId,
+      premium: await isPremiumGuild(targetGuildId),
+      settings: mergeSettings(await getGuildSettings(targetGuildId), targetGuildId),
+    });
+  });
+
+  app.put("/api/owner/guilds/:guildId/settings", express.json(), async (request, response) => {
+    if (!isOwnerRequest(request, request.body?.adminKey)) {
+      response.status(403).json({ error: "Owner access required." });
+      return;
+    }
+
+    const supportCode = cleanSupportCode(request.body?.supportCode);
+    if (supportCodeForGuild(request.params.guildId) !== supportCode) {
+      response.status(403).json({ error: "Support code does not match this server." });
+      return;
+    }
+
+    const settings = sanitizeSettings(request.body);
+    await setGuildSettings(request.params.guildId, settings);
+    response.json({ ok: true, settings: mergeSettings(settings, request.params.guildId) });
   });
 
   app.post("/api/bot-requests", express.json(), async (request, response) => {
@@ -184,7 +227,7 @@ export function createServer() {
   });
 
   app.get("/api/bot-requests", async (request, response) => {
-    if (!isAdminRequest(request)) {
+    if (!isOwnerRequest(request)) {
       response.status(403).json({ error: "Admin access required." });
       return;
     }
@@ -192,6 +235,10 @@ export function createServer() {
   });
 
   app.post("/api/premium/manual", express.json(), async (request, response) => {
+    if (!isOwnerRequest(request, request.body?.adminKey)) {
+      response.status(403).json({ error: "Owner access required." });
+      return;
+    }
     const { guildId, active = true } = request.body;
     if (!guildId) {
       response.status(400).json({ error: "guildId is required" });
@@ -263,14 +310,14 @@ export function createServer() {
 
 const defaultSettings = {
   embedTitle: "Session Startup",
-  embedMessage: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
+  embedMessage: "A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.",
   embedColor: "#5865f2",
   footerText: "Logic Systems Custom",
   customEmbeds: true,
   commandTemplates: {
     startup: {
       title: "Session Startup",
-      message: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
+      message: "A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.",
       color: "#5865f2",
       footer: "Powered by Logic Systems",
       pingRole: "",
@@ -368,7 +415,291 @@ const defaultSettings = {
       cooldown: "0",
       enabled: true,
     },
+    ssu: {
+      title: "Server Startup",
+      message: "Server startup is now active. Join up and prepare for roleplay.",
+      color: "#5865f2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "10",
+      enabled: true,
+    },
+    modcall: {
+      title: "Moderator Call",
+      message: "Moderators are needed for the current roleplay session.",
+      color: "#ff6b6b",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    lowmod: {
+      title: "Low Moderation",
+      message: "Moderator coverage is low. Available staff should assist the session when possible.",
+      color: "#ff9f43",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    fullmod: {
+      title: "Full Moderation",
+      message: "Moderator coverage is full. Staff coverage is active for the current session.",
+      color: "#23c46e",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    ssd: {
+      title: "Server Shutdown",
+      message: "Server shutdown has been announced. Wrap up scenes and follow staff instructions.",
+      color: "#ff6b6b",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    cohost: {
+      title: "Cohost Added",
+      message: "A cohost has been added to the session.",
+      color: "#76f0d2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    cohostEnd: {
+      title: "Cohost Ended",
+      message: "The cohost session has ended.",
+      color: "#aeb6cc",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    rules: {
+      title: "Roleplay Rules",
+      message: "Follow all roleplay rules, listen to staff, and keep scenes realistic.",
+      color: "#5865f2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    joinVc: {
+      title: "Join Voice Chat",
+      message: "Please join the required voice channel for this session.",
+      color: "#64d8ff",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    hatepings: {
+      title: "Ping Reminder",
+      message: "Do not spam ping staff. Open a ticket or wait for staff to respond.",
+      color: "#ff6b6b",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    quota: {
+      title: "Staff Quota Update",
+      message: "Staff quota progress has been updated.",
+      color: "#9b8cff",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    supervise: {
+      title: "Supervision Notice",
+      message: "A staff supervision notice has been posted.",
+      color: "#f2c94c",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    warn: {
+      title: "Warning Issued",
+      message: "A staff warning has been issued.",
+      color: "#ffd166",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    mute: {
+      title: "Member Muted",
+      message: "A member has been timed out by staff.",
+      color: "#ff9f43",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    unmute: {
+      title: "Member Unmuted",
+      message: "A member timeout has been removed.",
+      color: "#23c46e",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    kick: {
+      title: "Member Kicked",
+      message: "A member has been kicked by staff.",
+      color: "#ff6b6b",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    ban: {
+      title: "Member Banned",
+      message: "A member has been banned by staff.",
+      color: "#ff6b6b",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    register: {
+      title: "Registration Added",
+      message: "A roleplay registration has been added.",
+      color: "#76f0d2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    unregister: {
+      title: "Registration Removed",
+      message: "A roleplay registration has been removed.",
+      color: "#aeb6cc",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    warrant: {
+      title: "Warrant Posted",
+      message: "A roleplay warrant has been posted.",
+      color: "#ff6b6b",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    payticket: {
+      title: "Ticket Paid",
+      message: "A roleplay ticket payment has been recorded.",
+      color: "#23c46e",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    profile: {
+      title: "Roleplay Profile",
+      message: "A roleplay profile card has been created.",
+      color: "#64d8ff",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    staffProfile: {
+      title: "Staff Profile",
+      message: "A staff profile card has been created.",
+      color: "#9b8cff",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    balance: {
+      title: "Wallet Balance",
+      message: "A roleplay wallet balance has been posted.",
+      color: "#23c46e",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    work: {
+      title: "Work Shift Receipt",
+      message: "A roleplay work shift receipt has been posted.",
+      color: "#f2c94c",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    deposit: {
+      title: "Deposit Receipt",
+      message: "A roleplay deposit receipt has been posted.",
+      color: "#23c46e",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    withdraw: {
+      title: "Withdrawal Receipt",
+      message: "A roleplay withdrawal receipt has been posted.",
+      color: "#ff9f43",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
+    giveMoney: {
+      title: "Money Transfer",
+      message: "A roleplay money transfer has been posted.",
+      color: "#76f0d2",
+      footer: "Powered by Logic Systems",
+      pingRole: "",
+      channel: "",
+      cooldown: "0",
+      enabled: true,
+    },
   },
+};
+
+const staleTemplateMessages = {
+  startup: ["A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic."],
 };
 
 function sanitizeSettings(body) {
@@ -394,28 +725,46 @@ function sanitizeBotRequest(body = {}) {
   };
 }
 
-function isAdminRequest(request) {
+function isOwnerRequest(request, adminKeyFromBody = "") {
   const adminKey = process.env.ADMIN_KEY;
-  return Boolean(adminKey && request.get("x-admin-key") === adminKey);
+  return Boolean(adminKey && (request.get("x-admin-key") === adminKey || adminKeyFromBody === adminKey));
 }
 
-function mergeSettings(settings = {}) {
+function mergeSettings(settings = {}, guildId = "") {
   return {
     ...defaultSettings,
     ...(settings ?? {}),
+    supportCode: supportCodeForGuild(guildId),
     commandTemplates: sanitizeCommandTemplates(settings?.commandTemplates),
   };
+}
+
+function cleanSupportCode(value) {
+  return String(value ?? "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 24);
+}
+
+function supportCodeForGuild(guildId) {
+  const normalized = String(guildId ?? "").trim();
+  if (!normalized) return "";
+  return `LS-${normalized}`;
+}
+
+function decodeSupportCode(supportCode) {
+  if (!supportCode?.startsWith("LS-")) return "";
+  const decoded = supportCode.slice(3);
+  return /^\d{10,30}$/.test(decoded) ? decoded : "";
 }
 
 function sanitizeCommandTemplates(templates = {}) {
   return Object.fromEntries(
     Object.entries(defaultSettings.commandTemplates).map(([name, defaults]) => {
       const template = templates?.[name] ?? {};
+      const message = staleTemplateMessages[name]?.includes(template.message) ? defaults.message : template.message;
       return [
         name,
         {
           title: cleanText(template.title, defaults.title, 120),
-          message: cleanText(template.message, defaults.message, 1000),
+          message: cleanText(message, defaults.message, 1000),
           color: /^#[0-9a-f]{6}$/i.test(template.color) ? template.color : defaults.color,
           footer: cleanText(template.footer, defaults.footer, 120),
           pingRole: cleanText(template.pingRole, "", 80),
@@ -498,6 +847,18 @@ function getSafeSiteOrigin(value) {
   }
 }
 
+function getSafeSiteUrl(value) {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    const url = new URL(value);
+    const safeOrigin = getSafeSiteOrigin(url.origin);
+    if (!safeOrigin) return null;
+    return `${safeOrigin}${url.pathname}${url.search}`;
+  } catch {
+    return null;
+  }
+}
+
 function createOAuthState(returnTo) {
   return Buffer.from(JSON.stringify({ returnTo }), "utf8").toString("base64url");
 }
@@ -506,20 +867,23 @@ function parseOAuthState(state) {
   if (typeof state !== "string" || !state) return null;
   try {
     const payload = JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
-    return getSafeSiteOrigin(payload.returnTo);
+    return getSafeSiteUrl(payload.returnTo);
   } catch {
     return null;
   }
 }
 
 async function exchangeDiscordCode(code, backendUrl) {
-  if (!process.env.DISCORD_CLIENT_SECRET) {
+  const clientId = cleanEnvValue(process.env.DISCORD_CLIENT_ID);
+  const clientSecret = cleanEnvValue(process.env.DISCORD_CLIENT_SECRET);
+
+  if (!clientSecret) {
     throw new Error("DISCORD_CLIENT_SECRET is not configured.");
   }
 
   const params = new URLSearchParams({
-    client_id: process.env.DISCORD_CLIENT_ID,
-    client_secret: process.env.DISCORD_CLIENT_SECRET,
+    client_id: clientId,
+    client_secret: clientSecret,
     grant_type: "authorization_code",
     code,
     redirect_uri: `${backendUrl}/auth/discord/callback`,
@@ -533,9 +897,18 @@ async function exchangeDiscordCode(code, backendUrl) {
 
   if (!response.ok) {
     const errorBody = await response.text();
+    if (response.status === 401 && errorBody.includes("invalid_client")) {
+      throw new Error(
+        "Discord rejected the OAuth client credentials. Check that DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET on your backend host match the same Discord Developer Portal application, then redeploy/restart the backend.",
+      );
+    }
     throw new Error(`Discord token exchange failed: ${response.status} ${errorBody}`);
   }
   return response.json();
+}
+
+function cleanEnvValue(value) {
+  return String(value ?? "").trim().replace(/^["']|["']$/g, "");
 }
 
 async function discordApi(path, accessToken) {

@@ -9,11 +9,14 @@ import * as dmall from "./dmall.js";
 import * as ea from "./ea.js";
 import * as embed from "./embed.js";
 import * as giveMoney from "./give-money.js";
+import * as fullmod from "./fullmod.js";
 import * as hatepings from "./hatepings.js";
 import * as help from "./help.js";
 import * as joinVc from "./join-vc.js";
 import * as kick from "./kick.js";
+import * as lowmod from "./lowmod.js";
 import * as membercount from "./membercount.js";
+import * as modcall from "./modcall.js";
 import * as mute from "./mute.js";
 import * as over from "./over.js";
 import * as payticket from "./payticket.js";
@@ -36,6 +39,7 @@ import * as staff from "./staff.js";
 import * as startup from "./startup.js";
 import * as status from "./status.js";
 import * as supervise from "./supervise.js";
+import * as ssd from "./ssd.js";
 import * as ssu from "./ssu.js";
 import * as ticket from "./ticket.js";
 import * as unmute from "./unmute.js";
@@ -56,10 +60,13 @@ export const slashCommands = [
   startup,
   ea,
   giveMoney,
+  fullmod,
   hatepings,
   joinVc,
   kick,
+  lowmod,
   membercount,
+  modcall,
   mute,
   setup,
   release,
@@ -87,6 +94,7 @@ export const slashCommands = [
   antiraid,
   announce,
   supervise,
+  ssd,
   ticket,
   unmute,
   unregister,

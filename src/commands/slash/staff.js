@@ -3,12 +3,12 @@ import { buildMessage, standardEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("staff")
-  .setDescription("Post a staff announcement.")
+  .setDescription("Send a clean staff announcement embed.")
   .addStringOption((option) =>
-    option.setName("message").setDescription("Staff message").setRequired(true),
+    option.setName("message").setDescription("Announcement text to post.").setRequired(true),
   )
   .addStringOption((option) =>
-    option.setName("signed").setDescription("Staff name or department").setRequired(false),
+    option.setName("signed").setDescription("Staff name, rank, or department.").setRequired(false),
   );
 
 export async function execute(interaction) {

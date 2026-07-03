@@ -39,6 +39,7 @@ DISCORD_TOKEN=your_discord_bot_token
 DISCORD_CLIENT_ID=1507551249204117535
 DISCORD_CLIENT_SECRET=your_discord_oauth_client_secret
 SESSION_SECRET=make_a_long_random_secret
+ADMIN_KEY=make_a_private_owner_dashboard_key
 DISCORD_GUILD_ID=optional_test_server_id_for_command_deploy
 PUBLIC_SITE_URL=https://musical-otter-f551a8.netlify.app
 PUBLIC_BACKEND_URL=https://your-orihost-app-url
@@ -63,6 +64,8 @@ const BACKEND_URL = "https://your-orihost-app-url";
 
 Deploy the website to Netlify again after changing that value.
 
+If Discord login shows `invalid_client`, the backend host has the wrong Discord OAuth credentials. In the Discord Developer Portal, open the same application as `DISCORD_CLIENT_ID`, copy its OAuth2 Client Secret, set it as `DISCORD_CLIENT_SECRET` on the backend host, then redeploy/restart the backend.
+
 ## Slash Commands
 
 Run this once after setting environment variables:
@@ -82,4 +85,3 @@ Recommended setup:
 - Netlify: website
 - Orihost: bot and backend with `npm start`
 - GitHub: code
-

@@ -1,7 +1,9 @@
 const BOT_CLIENT_ID = "1507551249204117535";
 const STORAGE_KEY = "logic-systems-dashboard";
 const SESSION_STORAGE_KEY = "logic-systems-session";
-const BACKEND_URL = "https://bot-services-uvwb.onrender.com";
+const BACKEND_URL = window.location.hostname === "localhost" 
+  ? "http://localhost:3000"
+  : "https://bot-services-uvwb.onrender.com";
 
 const inviteUrl =
   BOT_CLIENT_ID === "YOUR_BOT_CLIENT_ID"
@@ -22,7 +24,7 @@ const commandTemplateDefaults = {
   startup: {
     label: "/startup",
     title: "Session Startup",
-    message: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
+    message: "A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.",
     color: "#5865f2",
     footer: "Powered by Logic Systems",
     pingRole: "",
@@ -129,6 +131,318 @@ const commandTemplateDefaults = {
     cooldown: "0",
     enabled: true,
   },
+  ssu: {
+    label: "/ssu",
+    title: "Server Startup",
+    message: "Server startup is now active. Join up and prepare for roleplay.",
+    color: "#5865f2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "10",
+    enabled: true,
+  },
+  modcall: {
+    label: "/modcall",
+    title: "Moderator Call",
+    message: "Moderators are needed for the current roleplay session.",
+    color: "#ff6b6b",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  lowmod: {
+    label: "/lowmod",
+    title: "Low Moderation",
+    message: "Moderator coverage is low. Available staff should assist the session when possible.",
+    color: "#ff9f43",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  fullmod: {
+    label: "/fullmod",
+    title: "Full Moderation",
+    message: "Moderator coverage is full. Staff coverage is active for the current session.",
+    color: "#23c46e",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  ssd: {
+    label: "/ssd",
+    title: "Server Shutdown",
+    message: "Server shutdown has been announced. Wrap up scenes and follow staff instructions.",
+    color: "#ff6b6b",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  cohost: {
+    label: "/cohost",
+    title: "Cohost Added",
+    message: "A cohost has been added to the session.",
+    color: "#76f0d2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  cohostEnd: {
+    label: "/cohost-end",
+    title: "Cohost Ended",
+    message: "The cohost session has ended.",
+    color: "#aeb6cc",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  rules: {
+    label: "/rules",
+    title: "Roleplay Rules",
+    message: "Follow all roleplay rules, listen to staff, and keep scenes realistic.",
+    color: "#5865f2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  joinVc: {
+    label: "/join-vc",
+    title: "Join Voice Chat",
+    message: "Please join the required voice channel for this session.",
+    color: "#64d8ff",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  hatepings: {
+    label: "/hatepings",
+    title: "Ping Reminder",
+    message: "Do not spam ping staff. Open a ticket or wait for staff to respond.",
+    color: "#ff6b6b",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  quota: {
+    label: "/quota",
+    title: "Staff Quota Update",
+    message: "Staff quota progress has been updated.",
+    color: "#9b8cff",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  supervise: {
+    label: "/supervise",
+    title: "Supervision Notice",
+    message: "A staff supervision notice has been posted.",
+    color: "#f2c94c",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  warn: {
+    label: "/warn",
+    title: "Warning Issued",
+    message: "A staff warning has been issued.",
+    color: "#ffd166",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  mute: {
+    label: "/mute",
+    title: "Member Muted",
+    message: "A member has been timed out by staff.",
+    color: "#ff9f43",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  unmute: {
+    label: "/unmute",
+    title: "Member Unmuted",
+    message: "A member timeout has been removed.",
+    color: "#23c46e",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  kick: {
+    label: "/kick",
+    title: "Member Kicked",
+    message: "A member has been kicked by staff.",
+    color: "#ff6b6b",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  ban: {
+    label: "/ban",
+    title: "Member Banned",
+    message: "A member has been banned by staff.",
+    color: "#ff6b6b",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  register: {
+    label: "/register",
+    title: "Registration Added",
+    message: "A roleplay registration has been added.",
+    color: "#76f0d2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  unregister: {
+    label: "/unregister",
+    title: "Registration Removed",
+    message: "A roleplay registration has been removed.",
+    color: "#aeb6cc",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  warrant: {
+    label: "/warrant",
+    title: "Warrant Posted",
+    message: "A roleplay warrant has been posted.",
+    color: "#ff6b6b",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  payticket: {
+    label: "/payticket",
+    title: "Ticket Paid",
+    message: "A roleplay ticket payment has been recorded.",
+    color: "#23c46e",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  profile: {
+    label: "/profile",
+    title: "Roleplay Profile",
+    message: "A roleplay profile card has been created.",
+    color: "#64d8ff",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  staffProfile: {
+    label: "/staff-profile",
+    title: "Staff Profile",
+    message: "A staff profile card has been created.",
+    color: "#9b8cff",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  balance: {
+    label: "/balance",
+    title: "Wallet Balance",
+    message: "A roleplay wallet balance has been posted.",
+    color: "#23c46e",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  work: {
+    label: "/work",
+    title: "Work Shift Receipt",
+    message: "A roleplay work shift receipt has been posted.",
+    color: "#f2c94c",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  deposit: {
+    label: "/deposit",
+    title: "Deposit Receipt",
+    message: "A roleplay deposit receipt has been posted.",
+    color: "#23c46e",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  withdraw: {
+    label: "/withdraw",
+    title: "Withdrawal Receipt",
+    message: "A roleplay withdrawal receipt has been posted.",
+    color: "#ff9f43",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+  giveMoney: {
+    label: "/give-money",
+    title: "Money Transfer",
+    message: "A roleplay money transfer has been posted.",
+    color: "#76f0d2",
+    footer: "Powered by Logic Systems",
+    pingRole: "",
+    channel: "",
+    cooldown: "0",
+    enabled: true,
+  },
+};
+
+const staleTemplateMessages = {
+  startup: ["A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic."],
 };
 
 const defaults = {
@@ -139,7 +453,7 @@ const defaults = {
     guildId: "",
     prefix: "/",
     embedTitle: "Session Startup",
-    embedMessage: "A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.",
+    embedMessage: "A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.",
     embedColor: "#3c43ec",
     footerText: "Powered by Logic Systems",
     customEmbeds: true,
@@ -179,6 +493,9 @@ const previewMessage = document.querySelector("#previewMessage");
 const previewFooter = document.querySelector("#previewFooter");
 const dashboardStatus = document.querySelector("#dashboardStatus");
 const commandTemplateList = document.querySelector("#commandTemplateList");
+const supportCodeText = document.querySelector("#supportCodeText");
+const ownerSupportForm = document.querySelector("#ownerSupportForm");
+const ownerSupportStatus = document.querySelector("#ownerSupportStatus");
 const botRequestForm = document.querySelector("#botRequestForm");
 const requestStatus = document.querySelector("#requestStatus");
 let loggedInGuilds = [];
@@ -221,6 +538,9 @@ function ensureCommandTemplates(bot) {
       ...commandTemplateDefaults[key],
       ...(bot.commandTemplates[key] ?? {}),
     };
+    if (staleTemplateMessages[key]?.includes(bot.commandTemplates[key].message)) {
+      bot.commandTemplates[key].message = commandTemplateDefaults[key].message;
+    }
   });
 }
 
@@ -287,6 +607,8 @@ function renderDashboard() {
   planNotice.textContent = isPremium
     ? "Free custom tools are active: branded embeds, in-bot embed building, footer editing, and anti-raid status are unlocked."
     : "Free service is active: roleplay commands, custom embeds, dashboard controls, and staff tools are available.";
+
+  if (supportCodeText) supportCodeText.textContent = bot.supportCode || "Sign in first";
 
   updatePreview();
 }
@@ -418,6 +740,11 @@ if (botRequestForm) {
   botRequestForm.addEventListener("submit", submitBotRequest);
 }
 
+if (ownerSupportForm) {
+  ownerSupportForm.querySelector("#ownerOpenButton")?.addEventListener("click", openCustomerDashboard);
+  ownerSupportForm.querySelector("#ownerSaveButton")?.addEventListener("click", saveCustomerDashboard);
+}
+
 renderDashboard();
 initDiscordDashboard();
 
@@ -458,7 +785,9 @@ async function initDiscordDashboard() {
       alert("Add your hosted backend URL in script.js first.");
       return;
     }
-    const returnTo = encodeURIComponent(window.location.origin);
+    const returnUrl = new URL(window.location.href);
+    returnUrl.hash = "";
+    const returnTo = encodeURIComponent(returnUrl.toString());
     window.location.href = `${BACKEND_URL}/auth/discord?returnTo=${returnTo}`;
   });
   dashboardHead.append(loginButton);
@@ -523,7 +852,7 @@ async function loadGuildSettings(guild) {
   const { premium, settings } = await apiGet(`/api/guilds/${guild.id}/settings`);
   state[guild.id] = {
     serverName: guild.name,
-    plan: premium ? "premium" : "premium",
+    plan: premium ? "premium" : "free",
     botName: guild.name,
     guildId: guild.id,
     prefix: "/",
@@ -535,6 +864,7 @@ async function loadGuildSettings(guild) {
     embedBuilder: true,
     antiRaid: true,
     commandTemplates: settings.commandTemplates ?? structuredClone(commandTemplateDefaults),
+    supportCode: settings.supportCode || `LS-${guild.id}`,
   };
   ensureCommandTemplates(state[guild.id]);
   saveState();
@@ -565,6 +895,92 @@ async function saveDashboardSettings() {
   } catch (error) {
     alert(error.message || "Could not save settings.");
   }
+}
+
+async function openCustomerDashboard() {
+  const owner = getOwnerSupportValues();
+  if (!owner.adminKey || !owner.supportCode) {
+    setOwnerSupportStatus("Enter your admin key and the customer's support number.");
+    return;
+  }
+
+  try {
+    setOwnerSupportStatus("Loading customer server...");
+    const result = await apiPost("/api/owner/support-access", owner);
+    selectedServer = result.guildId;
+    state[result.guildId] = buildBotStateFromSettings(result.guildId, `Customer ${result.guildId}`, result.premium, result.settings);
+    ensureCommandTemplates(state[result.guildId]);
+    saveState();
+    renderDashboard();
+    setOwnerSupportStatus(`Loaded customer server ${result.guildId}. Make edits, then click Save For Customer.`);
+  } catch (error) {
+    setOwnerSupportStatus(error.message || "Could not open customer dashboard.");
+  }
+}
+
+async function saveCustomerDashboard() {
+  const owner = getOwnerSupportValues();
+  const bot = currentBot();
+  if (!owner.adminKey || !owner.supportCode) {
+    setOwnerSupportStatus("Enter your admin key and the customer's support number first.");
+    return;
+  }
+  if (!bot.guildId) {
+    setOwnerSupportStatus("Open a customer dashboard before saving for them.");
+    return;
+  }
+
+  collectForm();
+
+  try {
+    setOwnerSupportStatus("Saving customer settings...");
+    const result = await apiPut(`/api/owner/guilds/${bot.guildId}/settings`, {
+      adminKey: owner.adminKey,
+      supportCode: owner.supportCode,
+      embedTitle: bot.embedTitle,
+      embedMessage: bot.embedMessage,
+      embedColor: bot.embedColor,
+      footerText: bot.footerText,
+      customEmbeds: bot.customEmbeds,
+      commandTemplates: bot.commandTemplates,
+    });
+    Object.assign(bot, result.settings);
+    saveState();
+    updatePreview();
+    setOwnerSupportStatus(`Saved settings for customer server ${bot.guildId}.`);
+  } catch (error) {
+    setOwnerSupportStatus(error.message || "Could not save customer settings.");
+  }
+}
+
+function getOwnerSupportValues() {
+  return {
+    adminKey: ownerSupportForm?.querySelector("[name='adminKey']")?.value.trim() ?? "",
+    supportCode: ownerSupportForm?.querySelector("[name='supportCode']")?.value.trim() ?? "",
+  };
+}
+
+function setOwnerSupportStatus(message) {
+  if (ownerSupportStatus) ownerSupportStatus.textContent = message;
+}
+
+function buildBotStateFromSettings(guildId, serverName, premium, settings) {
+  return {
+    serverName,
+    plan: premium ? "premium" : "premium",
+    botName: serverName,
+    guildId,
+    prefix: "/",
+    embedTitle: settings.embedTitle,
+    embedMessage: settings.embedMessage,
+    embedColor: settings.embedColor,
+    footerText: settings.footerText,
+    customEmbeds: Boolean(settings.customEmbeds),
+    embedBuilder: true,
+    antiRaid: true,
+    commandTemplates: settings.commandTemplates ?? structuredClone(commandTemplateDefaults),
+    supportCode: settings.supportCode,
+  };
 }
 
 async function apiGet(path) {

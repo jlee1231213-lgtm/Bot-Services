@@ -3,16 +3,16 @@ import { standardEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("peacetime")
-  .setDescription("Announce peacetime status.")
+  .setDescription("Turn peacetime status on or off.")
   .addStringOption((option) =>
     option
       .setName("status")
-      .setDescription("Whether peacetime is on or off.")
+      .setDescription("Peacetime status to announce.")
       .setRequired(true)
       .addChoices({ name: "On", value: "on" }, { name: "Off", value: "off" }),
   )
   .addStringOption((option) =>
-    option.setName("notes").setDescription("Extra peacetime notes").setRequired(false),
+    option.setName("notes").setDescription("Extra peacetime instructions.").setRequired(false),
   );
 
 export async function execute(interaction) {
@@ -20,8 +20,8 @@ export async function execute(interaction) {
   const notes = interaction.options.getString("notes");
   const description =
     status === "on"
-      ? "Peacetime is now active. No priority scenes, pursuits, or violent roleplay unless staff approves."
-      : "Peacetime is now disabled. Normal roleplay may resume.";
+      ? "Peacetime is now active. No priority scenes, pursuits, or violent roleplay unless staff approves it."
+      : "Peacetime is now disabled. Normal roleplay may resume, but all scenes still need to stay realistic.";
 
   await interaction.reply({
     embeds: [
