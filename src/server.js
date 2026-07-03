@@ -121,8 +121,8 @@ export function createServer() {
 
     res.cookie("admin_session", session, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
@@ -404,8 +404,8 @@ export function createServer() {
 
       response.cookie("logic_session", sessionId, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true,
+        sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       const returnTo = parseOAuthState(request.query.state) ?? "dashboard";
@@ -422,7 +422,11 @@ export function createServer() {
   app.post("/auth/logout", async (request, response) => {
     const sessionId = getCookie(request, "logic_session");
     if (sessionId) await deleteSession(sessionId);
-    response.clearCookie("logic_session", { secure: true, sameSite: "none" });
+    response.clearCookie("logic_session", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none"
+    });
     response.json({ ok: true });
   });
 
