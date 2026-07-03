@@ -26,7 +26,20 @@ export function createServer() {
   const backendUrl = process.env.PUBLIC_BACKEND_URL ?? `http://localhost:${port}`;
 
   app.use((request, response, next) => {
-    const origin = getSafeSiteOrigin(request.get("origin")) ?? siteUrl;
+    const requestOrigin = request.get("origin");
+
+    let origin = getSafeSiteOrigin(requestOrigin);
+
+    // Allow requests with no origin (mobile apps, file://, console, etc.)
+    if (!requestOrigin || requestOrigin === "null") {
+      origin = siteUrl;
+    }
+
+    // Fallback safety
+    if (!origin) {
+      origin = siteUrl;
+    }
+
     response.header("Access-Control-Allow-Origin", origin);
     response.header("Access-Control-Allow-Credentials", "true");
     response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
