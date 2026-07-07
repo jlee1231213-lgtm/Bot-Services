@@ -5,7 +5,13 @@ export const data = new SlashCommandBuilder()
   .setName("join-vc")
   .setDescription("Post a voice-channel join reminder.")
   .addChannelOption((option) => option.setName("channel").setDescription("Voice channel").setRequired(false))
-  .addStringOption((option) => option.setName("notes").setDescription("Extra VC notes").setRequired(false));
+  .addStringOption((option) => option.setName("notes").setDescription("Extra VC notes").setRequired(false))
+.addStringOption(option =>
+      option
+        .setName('channel-id')
+        .setDescription('The voice channel ID to join.')
+        .setRequired(false)
+    );
 
 export async function execute(interaction) {
   const channel = interaction.options.getChannel("channel");

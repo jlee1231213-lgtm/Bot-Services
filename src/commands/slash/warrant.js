@@ -6,7 +6,14 @@ export const data = new SlashCommandBuilder()
   .setDescription("Post a roleplay warrant.")
   .addUserOption((option) => option.setName("user").setDescription("Wanted user").setRequired(true))
   .addStringOption((option) => option.setName("reason").setDescription("Warrant reason").setRequired(true))
-  .addStringOption((option) => option.setName("status").setDescription("Active, cleared, or pending").setRequired(false));
+  .addStringOption((option) => option.setName("status").setDescription("Active, cleared, or pending").setRequired(false))
+.addStringOption(option =>
+      option.setName('offense')
+        .setDescription('Offense committed')
+        .setRequired(false)).addStringOption(option =>
+      option.setName('time')
+        .setDescription('Duration of the warrant (e.g., 24h, 7d)')
+        .setRequired(false));
 
 export async function execute(interaction) {
   await interaction.reply({

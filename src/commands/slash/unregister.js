@@ -5,7 +5,12 @@ export const data = new SlashCommandBuilder()
   .setName("unregister")
   .setDescription("Unregister a roleplay vehicle/profile entry.")
   .addStringOption((option) => option.setName("identifier").setDescription("Plate, callsign, or ID").setRequired(true))
-  .addStringOption((option) => option.setName("reason").setDescription("Removal reason").setRequired(false));
+  .addStringOption((option) => option.setName("reason").setDescription("Removal reason").setRequired(false))
+.addStringOption(option =>
+            option.setName('vehicle')
+                .setDescription('Select a vehicle to unregister')
+                .setRequired(false)
+                .setAutocomplete(true));
 
 export async function execute(interaction) {
   await interaction.reply({

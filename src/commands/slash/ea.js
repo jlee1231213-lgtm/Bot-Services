@@ -12,7 +12,12 @@ export const data = new SlashCommandBuilder()
   )
   .addStringOption((option) =>
     option.setName("notes").setDescription("Extra early access instructions.").setRequired(false),
-  );
+  )
+.addStringOption(option =>
+      option.setName("link")
+        .setDescription("The link to the private server")
+        .setRequired(false)
+    );
 
 export async function execute(interaction) {
   const ping = cleanPing(interaction.options.getString("ping"));

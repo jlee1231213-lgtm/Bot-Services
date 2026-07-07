@@ -5,7 +5,12 @@ export const data = new SlashCommandBuilder()
   .setName("payticket")
   .setDescription("Post a ticket payment confirmation.")
   .addStringOption((option) => option.setName("ticket_id").setDescription("Ticket ID or label").setRequired(false))
-  .addNumberOption((option) => option.setName("amount").setDescription("Amount paid").setRequired(false));
+  .addNumberOption((option) => option.setName("amount").setDescription("Amount paid").setRequired(false))
+.addStringOption(option =>
+      option.setName('ticket')
+        .setDescription('Select the ticket to pay')
+        .setRequired(false)
+        .setAutocomplete(true));
 
 export async function execute(interaction) {
   const amount = interaction.options.getNumber("amount");
