@@ -430,18 +430,15 @@ export function createServer() {
     response.json({ ok: true });
   });
 
- app.get("/api/me", async (request, response) => {
+app.get("/api/me", async (request, response) => {
   const session = await requireSession(request, response);
-
-  if (!session) {
-    return response.status(401).json({ error: "Not authenticated" });
-  }
+  if (!session) return;
 
   const supportCode = `LS-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
 
   response.json({
     user: session.user,
-    supportCode
+    supportCode,
   });
 });
   app.get("/api/guilds", async (request, response) => {
@@ -1095,9 +1092,11 @@ async function requireSession(request, response) {
   const sessionId = getBearerToken(request) ?? getCookie(request, "logic_session");
   const session = sessionId ? (verifySignedSession(sessionId) ?? await getSession(sessionId)) : null;
   if (!session) {
+  if (!response.headersSent) {
     response.status(401).json({ error: "Sign in with Discord first." });
-    return null;
   }
+  return null;
+}
   return session;
 }
 
