@@ -408,18 +408,18 @@ export function createServer() {
         sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      const returnTo = parseOAuthState(request.query.state) ?? "dashboard";
-      response.redirect(`${siteUrl}/#${returnTo}?session=${encodeURIComponent(sessionId)}`);
-  } catch (error) {
-  console.error("Discord OAuth failed", error);
-  if (response.headersSent) {
-    return;
-  }
-  response
-    .status(500)
-    .type("html")
-    .send(`<h1>Discord login failed</h1><pre>${escapeHtml(error.message)}</pre>`);
-}
+      const returnTo = parseOAuthState(request.query.state);
+      response.redirect(buildOAuthReturnUrl(returnTo ?? siteUrl, sessionId));
+    } catch (error) {
+      console.error("Discord OAuth failed", error);
+      if (response.headersSent) {
+        return;
+      }
+      response
+        .status(500)
+        .type("html")
+        .send(`<h1>Discord login failed</h1><pre>${escapeHtml(error.message)}</pre>`);
+    }
   });
 
   app.post("/auth/logout", async (request, response) => {
@@ -433,17 +433,17 @@ export function createServer() {
     response.json({ ok: true });
   });
 
-app.get("/api/me", async (request, response) => {
-  const session = await requireSession(request, response);
-  if (!session) return;
+  app.get("/api/me", async (request, response) => {
+    const session = await requireSession(request, response);
+    if (!session) return;
 
-  const supportCode = `LS-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
+    const supportCode = `LS-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
 
-  response.json({
-    user: session.user,
-    supportCode,
+    response.json({
+      user: session.user,
+      supportCode,
+    });
   });
-});
   app.get("/api/guilds", async (request, response) => {
     const session = await requireSession(request, response);
     if (!session) return;
@@ -1095,11 +1095,11 @@ async function requireSession(request, response) {
   const sessionId = getBearerToken(request) ?? getCookie(request, "logic_session");
   const session = sessionId ? (verifySignedSession(sessionId) ?? await getSession(sessionId)) : null;
   if (!session) {
-  if (!response.headersSent) {
-    response.status(401).json({ error: "Sign in with Discord first." });
+    if (!response.headersSent) {
+      response.status(401).json({ error: "Sign in with Discord first." });
+    }
+    return null;
   }
-  return null;
-}
   return session;
 }
 
@@ -1182,6 +1182,22 @@ function parseOAuthState(state) {
   } catch {
     return null;
   }
+}
+
+function buildOAuthReturnUrl(returnTo, sessionId) {
+  const fallbackUrl = getSafeSiteUrl(returnTo);
+  if (!fallbackUrl) {
+    return `${returnTo}#dashboard?session=${encodeURIComponent(sessionId)}`;
+  }
+
+  const url = new URL(fallbackUrl);
+  const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+  const [hashPath = "dashboard", hashQuery = ""] = hash.split("?");
+  const params = new URLSearchParams(hashQuery);
+  params.set("session", sessionId);
+
+  url.hash = `${hashPath || "dashboard"}?${params.toString()}`;
+  return url.toString();
 }
 
 async function exchangeDiscordCode(code, backendUrl) {
