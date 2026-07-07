@@ -378,17 +378,21 @@ export function createServer() {
 
     try {
       const tokenData = await exchangeDiscordCode(code, getRequestBackendUrl(request, backendUrl));
-      const [user, guilds] = await Promise.all([
+      const [user, guilds, botGuildIds] = await Promise.all([
         discordApi("/users/@me", tokenData.access_token),
         discordApi("/users/@me/guilds", tokenData.access_token),
+        getBotGuildIds(),
       ]);
 
-      const manageableGuilds = guilds.filter(canManageGuild).map((guild) => ({
-        id: guild.id,
-        name: guild.name,
-        icon: guild.icon,
-        owner: guild.owner,
-      }));
+      const manageableGuilds = guilds
+        .filter(canManageGuild)
+        .filter((guild) => botGuildIds.has(guild.id))
+        .map((guild) => ({
+          id: guild.id,
+          name: guild.name,
+          icon: guild.icon,
+          owner: guild.owner,
+        }));
 
       const session = {
         user: {
@@ -448,11 +452,14 @@ export function createServer() {
     const session = await requireSession(request, response);
     if (!session) return;
 
+    const botGuildIds = await getBotGuildIds();
     const guilds = await Promise.all(
-      session.guilds.map(async (guild) => ({
-        ...guild,
-        premium: await isPremiumGuild(guild.id),
-      })),
+      session.guilds
+        .filter((guild) => botGuildIds.has(guild.id))
+        .map(async (guild) => ({
+          ...guild,
+          premium: await isPremiumGuild(guild.id),
+        })),
     );
     response.json({ guilds });
   });
@@ -1247,6 +1254,29 @@ async function discordApi(path, accessToken) {
     throw new Error(`Discord API failed: ${path} ${response.status} ${errorBody}`);
   }
   return response.json();
+}
+
+async function botDiscordApi(path) {
+  const token = cleanEnvValue(process.env.DISCORD_TOKEN);
+  if (!token) {
+    throw new Error("DISCORD_TOKEN is required to load bot guild membership.");
+  }
+
+  const response = await fetch(`https://discord.com/api/v10${path}`, {
+    headers: { Authorization: `Bot ${token}` },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Discord bot API failed: ${path} ${response.status} ${errorBody}`);
+  }
+
+  return response.json();
+}
+
+async function getBotGuildIds() {
+  const guilds = await botDiscordApi("/users/@me/guilds");
+  return new Set(guilds.map((guild) => guild.id));
 }
 
 function canManageGuild(guild) {
