@@ -24,6 +24,7 @@ const ownerSaveButton = document.querySelector("#ownerSaveButton");
 const ownerSupportStatus = document.querySelector("#ownerSupportStatus");
 const planNotice = document.querySelector("#planNotice");
 const dashboardSignInButton = document.querySelector("#dashboardSignInButton");
+const dashboardSignInWrap = document.querySelector("#dashboardSignInWrap");
 const inviteTargets = [
   document.querySelector("#inviteButton"),
   document.querySelector("#inviteButtonHero"),
@@ -161,6 +162,10 @@ function setDashboardAuthState(isSignedIn) {
 
   if (dashboardSignInButton) {
     dashboardSignInButton.hidden = isSignedIn;
+  }
+
+  if (dashboardSignInWrap) {
+    dashboardSignInWrap.hidden = isSignedIn;
   }
 }
 
