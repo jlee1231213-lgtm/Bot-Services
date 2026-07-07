@@ -17,6 +17,13 @@ import {
 } from "./store.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BOT_GUILDS_CACHE_MS = 5 * 60 * 1000;
+const BOT_GUILDS_RATE_LIMIT_CACHE_MS = 60 * 1000;
+let botGuildIdsCache = {
+  ids: new Set(),
+  expiresAt: 0,
+};
+let botGuildIdsPromise = null;
 
 export function createServer() {
   const app = express();
@@ -1268,15 +1275,49 @@ async function botDiscordApi(path) {
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Discord bot API failed: ${path} ${response.status} ${errorBody}`);
+    const error = new Error(`Discord bot API failed: ${path} ${response.status} ${errorBody}`);
+    error.status = response.status;
+    error.retryAfter = Number(response.headers.get("retry-after") || 0);
+    throw error;
   }
 
   return response.json();
 }
 
 async function getBotGuildIds() {
-  const guilds = await botDiscordApi("/users/@me/guilds");
-  return new Set(guilds.map((guild) => guild.id));
+  const now = Date.now();
+  if (botGuildIdsCache.expiresAt > now) {
+    return botGuildIdsCache.ids;
+  }
+
+  if (!botGuildIdsPromise) {
+    botGuildIdsPromise = refreshBotGuildIds().finally(() => {
+      botGuildIdsPromise = null;
+    });
+  }
+
+  return botGuildIdsPromise;
+}
+
+async function refreshBotGuildIds() {
+  try {
+    const guilds = await botDiscordApi("/users/@me/guilds");
+    const ids = new Set(guilds.map((guild) => guild.id));
+    botGuildIdsCache = {
+      ids,
+      expiresAt: Date.now() + BOT_GUILDS_CACHE_MS,
+    };
+    return ids;
+  } catch (error) {
+    const retryMs = Math.max(
+      BOT_GUILDS_RATE_LIMIT_CACHE_MS,
+      Number.isFinite(error.retryAfter) && error.retryAfter > 0 ? error.retryAfter * 1000 : 0,
+    );
+
+    botGuildIdsCache.expiresAt = Date.now() + retryMs;
+    console.warn("Could not refresh Discord bot guild cache", error.message);
+    return botGuildIdsCache.ids;
+  }
 }
 
 function canManageGuild(guild) {
