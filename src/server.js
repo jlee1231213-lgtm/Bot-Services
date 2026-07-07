@@ -19,11 +19,13 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BOT_GUILDS_CACHE_MS = 5 * 60 * 1000;
 const BOT_GUILDS_RATE_LIMIT_CACHE_MS = 60 * 1000;
+const DISCORD_OAUTH_RATE_LIMIT_FALLBACK_MS = 5 * 60 * 1000;
 let botGuildIdsCache = {
   ids: new Set(),
   expiresAt: 0,
 };
 let botGuildIdsPromise = null;
+let discordOAuthCooldownUntil = 0;
 
 export function createServer() {
   const app = express();
@@ -355,6 +357,11 @@ export function createServer() {
   });
 
   app.get("/auth/discord", (request, response) => {
+    if (discordOAuthCooldownUntil > Date.now()) {
+      response.status(429).type("html").send(renderDiscordRateLimitPage(discordOAuthCooldownUntil, siteUrl));
+      return;
+    }
+
     const clientId = process.env.DISCORD_CLIENT_ID;
     if (!clientId) {
       response.status(500).send("DISCORD_CLIENT_ID is not configured.");
@@ -424,6 +431,13 @@ export function createServer() {
     } catch (error) {
       console.error("Discord OAuth failed", error);
       if (response.headersSent) {
+        return;
+      }
+      if (error.status === 429) {
+        response
+          .status(429)
+          .type("html")
+          .send(renderDiscordRateLimitPage(error.cooldownUntil ?? discordOAuthCooldownUntil, siteUrl));
         return;
       }
       response
@@ -1243,9 +1257,23 @@ async function exchangeDiscordCode(code, backendUrl) {
         "Discord rejected the OAuth client credentials. Check that DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET on your backend host match the same Discord Developer Portal application, then redeploy/restart the backend.",
       );
     }
-    throw new Error(`Discord token exchange failed: ${response.status} ${errorBody}`);
+    const error = new Error(`Discord token exchange failed: ${response.status} ${errorBody}`);
+    error.status = response.status;
+    error.retryAfter = Number(response.headers.get("retry-after") || 0);
+    if (response.status === 429) {
+      discordOAuthCooldownUntil = Date.now() + getDiscordRetryMs(error.retryAfter);
+      error.cooldownUntil = discordOAuthCooldownUntil;
+    }
+    throw error;
   }
   return response.json();
+}
+
+function getDiscordRetryMs(retryAfter) {
+  return Math.max(
+    DISCORD_OAUTH_RATE_LIMIT_FALLBACK_MS,
+    Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 0,
+  );
 }
 
 function cleanEnvValue(value) {
@@ -1334,6 +1362,58 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function renderDiscordRateLimitPage(cooldownUntil, siteUrl) {
+  const waitSeconds = Math.max(60, Math.ceil((cooldownUntil - Date.now()) / 1000));
+  const waitMinutes = Math.ceil(waitSeconds / 60);
+  const safeSiteUrl = escapeHtml(siteUrl);
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Discord Login Cooling Down</title>
+    <style>
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background: #07101d;
+        color: #f5f8ff;
+        font-family: Arial, sans-serif;
+      }
+      main {
+        width: min(520px, calc(100vw - 32px));
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: 24px;
+        padding: 28px;
+        background: rgba(11, 20, 35, .88);
+      }
+      p { color: #aebbd0; line-height: 1.55; }
+      a {
+        display: inline-block;
+        margin-top: 12px;
+        border-radius: 14px;
+        padding: 12px 16px;
+        color: #fff;
+        background: #5b8cff;
+        text-decoration: none;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Discord login is cooling down</h1>
+      <p>Discord temporarily blocked login requests because too many were sent at once. Wait about ${waitMinutes} minute${waitMinutes === 1 ? "" : "s"}, then try signing in again.</p>
+      <p>Please do not keep refreshing during the cooldown, because that can make Discord keep blocking it.</p>
+      <a href="${safeSiteUrl}#dashboard">Back to dashboard</a>
+    </main>
+  </body>
+</html>`;
 }
 
 const premiumActiveEvents = new Set([
