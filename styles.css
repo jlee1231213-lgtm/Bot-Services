@@ -898,6 +898,10 @@ img {
   display: none !important;
 }
 
+.dashboard-panel.is-empty > :not(.dashboard-head):not(.notice) {
+  display: none !important;
+}
+
 .subsection-head {
   align-items: flex-start;
   margin-bottom: 14px;

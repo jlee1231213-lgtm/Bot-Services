@@ -157,6 +157,7 @@ function setDashboardAuthState(isSignedIn) {
   }
 
   if (dashboardSignInButton) {
+    dashboardSignInButton.textContent = "Sign in with Discord";
     dashboardSignInButton.hidden = isSignedIn;
   }
 
@@ -165,11 +166,26 @@ function setDashboardAuthState(isSignedIn) {
   }
 }
 
+function setDashboardRetrySignIn(shouldShow) {
+  if (dashboardSignInButton) {
+    dashboardSignInButton.textContent = "Sign in again with Discord";
+    dashboardSignInButton.hidden = !shouldShow;
+  }
+
+  if (dashboardSignInWrap) {
+    dashboardSignInWrap.hidden = !shouldShow;
+  }
+}
+
 function setDashboardServerState(hasServer) {
   dashboardForm?.classList.toggle("is-empty", !hasServer);
 
   if (supportCodePanel) {
     supportCodePanel.hidden = !hasServer;
+  }
+
+  if (hasServer) {
+    setDashboardRetrySignIn(false);
   }
 
   if (!hasServer) {
@@ -407,11 +423,13 @@ async function loadGuilds() {
       await selectGuild(guilds[0].id);
     } else {
       setDashboardServerState(false);
+      setDashboardRetrySignIn(true);
       setDashboardStatus("Signed in, but the bot is not in any manageable servers yet.");
     }
   } catch (error) {
     console.error("Failed to load guilds", error);
     setDashboardServerState(false);
+    setDashboardRetrySignIn(Boolean(user));
     renderGuildList([]);
   }
 }
