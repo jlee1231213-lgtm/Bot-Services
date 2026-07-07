@@ -410,13 +410,16 @@ export function createServer() {
       });
       const returnTo = parseOAuthState(request.query.state) ?? "dashboard";
       response.redirect(`${siteUrl}/#${returnTo}?session=${encodeURIComponent(sessionId)}`);
-    } catch (error) {
-      console.error("Discord OAuth failed", error);
-      response
-        .status(500)
-        .type("html")
-        .send(`<h1>Discord login failed</h1><pre>${escapeHtml(error.message)}</pre>`);
-    }
+  } catch (error) {
+  console.error("Discord OAuth failed", error);
+  if (response.headersSent) {
+    return;
+  }
+  response
+    .status(500)
+    .type("html")
+    .send(`<h1>Discord login failed</h1><pre>${escapeHtml(error.message)}</pre>`);
+}
   });
 
   app.post("/auth/logout", async (request, response) => {
