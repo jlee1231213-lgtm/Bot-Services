@@ -14,6 +14,8 @@ const dashboardStatus = document.querySelector("#dashboardStatus");
 const selectedServerName = document.querySelector("#selectedServerName");
 const commandTemplateList = document.querySelector("#commandTemplateList");
 const serverListContainer = document.querySelector("#serverList");
+const serverPanel = document.querySelector("#serverPanel");
+const supportCodePanel = document.querySelector("#supportCodePanel");
 const requestForm = document.querySelector("#botRequestForm");
 const requestStatus = document.querySelector("#requestStatus");
 const dashboardForm = document.querySelector("#dashboardForm");
@@ -32,6 +34,10 @@ const titleInput = document.querySelector("#embedTitleInput");
 const messageInput = document.querySelector("#embedMessageInput");
 const colorInput = document.querySelector("#embedColorInput");
 const footerInput = document.querySelector("#footerTextInput");
+const commandTitleInput = dashboardForm?.elements.commandTitle ?? null;
+const commandMessageInput = dashboardForm?.elements.commandMessage ?? null;
+const commandColorInput = dashboardForm?.elements.commandColor ?? null;
+const commandFooterInput = dashboardForm?.elements.commandFooter ?? null;
 
 const commandCatalog = [
   { key: "startup", name: "STARTUP", desc: "Launch a session announcement." },
@@ -48,6 +54,7 @@ let selectedGuildId = null;
 let guildSettings = null;
 let activeCommandKey = "startup";
 let sessionToken = null;
+let previewMode = "embed";
 
 function setText(el, text) {
   if (el) el.textContent = text;
@@ -143,17 +150,58 @@ function setDashboardStatus(message) {
   setText(dashboardStatus, message);
 }
 
+function setDashboardAuthState(isSignedIn) {
+  if (serverPanel) {
+    serverPanel.hidden = !isSignedIn;
+  }
+
+  if (supportCodePanel) {
+    supportCodePanel.hidden = !isSignedIn;
+  }
+
+  if (dashboardSignInButton) {
+    dashboardSignInButton.hidden = isSignedIn;
+  }
+}
+
 function getCurrentSettings() {
   return guildSettings?.settings ?? guildSettings ?? null;
 }
 
-function setPreviewFromInputs() {
-  setText(previewTitle, titleInput?.value || "Session Startup");
-  setText(previewMessage, messageInput?.value || "A new roleplay session is starting. Join up and follow the server rules.");
-  setText(previewFooter, footerInput?.value || "Powered by Logic Systems");
-  if (previewColor && colorInput?.value) {
-    previewColor.style.background = colorInput.value;
+function applyPreviewContent({ title, message, footer, color }) {
+  setText(previewTitle, title || "Session Startup");
+  setText(previewMessage, message || "A new roleplay session is starting. Join up and follow the server rules.");
+  setText(previewFooter, footer || "Powered by Logic Systems");
+  if (previewColor) {
+    previewColor.style.background = color || "#5865f2";
   }
+}
+
+function setEmbedPreviewFromInputs() {
+  applyPreviewContent({
+    title: titleInput?.value,
+    message: messageInput?.value,
+    footer: footerInput?.value,
+    color: colorInput?.value,
+  });
+}
+
+function setCommandPreviewFromInputs() {
+  applyPreviewContent({
+    title: commandTitleInput?.value,
+    message: commandMessageInput?.value,
+    footer: commandFooterInput?.value,
+    color: commandColorInput?.value,
+  });
+}
+
+function refreshPreview() {
+  if (previewMode === "command") {
+    setCommandPreviewFromInputs();
+    return;
+  }
+
+  setEmbedPreviewFromInputs();
 }
 
 function updatePlanNotice() {
@@ -194,7 +242,7 @@ function applySettingsToForm(settings) {
   }
 
   applyCommandTemplate(activeCommandKey);
-  setPreviewFromInputs();
+  refreshPreview();
 }
 
 function getActiveTemplate() {
@@ -219,6 +267,8 @@ function applyCommandTemplate(commandKey) {
   dashboardForm.elements.commandPingRole.value = template.pingRole || "";
   dashboardForm.elements.commandChannel.value = template.channel || "";
   dashboardForm.elements.commandEnabled.checked = template.enabled !== false;
+  previewMode = "command";
+  refreshPreview();
 }
 
 function renderCommandCards() {
@@ -275,6 +325,7 @@ function renderGuildList(list) {
 }
 
 async function loadUser() {
+  setDashboardAuthState(false);
   setText(supportCodeText, "Loading...");
   setDashboardStatus("Checking your Discord session...");
 
@@ -291,6 +342,7 @@ async function loadUser() {
       if (res.status === 401) {
         saveSessionToken(null);
       }
+      setDashboardAuthState(false);
       setText(supportCodeText, "Sign in first");
       setDashboardStatus("Sign in with Discord to load your servers.");
       renderGuildList([]);
@@ -299,12 +351,14 @@ async function loadUser() {
 
     const data = await res.json();
     user = data.user ?? null;
+    setDashboardAuthState(true);
     setText(supportCodeText, data.supportCode || "N/A");
     setDashboardStatus(`Signed in as ${user?.username ?? "Discord user"}`);
 
     await loadGuilds();
   } catch (error) {
     console.error("Failed to load user", error);
+    setDashboardAuthState(false);
     setText(supportCodeText, "Unavailable");
     setDashboardStatus("Could not connect to the dashboard right now.");
   }
@@ -556,7 +610,17 @@ async function saveOwnerSupport() {
 
 function attachLivePreview() {
   [titleInput, messageInput, colorInput, footerInput].forEach((input) => {
-    input?.addEventListener("input", setPreviewFromInputs);
+    input?.addEventListener("input", () => {
+      previewMode = "embed";
+      refreshPreview();
+    });
+  });
+
+  [commandTitleInput, commandMessageInput, commandColorInput, commandFooterInput].forEach((input) => {
+    input?.addEventListener("input", () => {
+      previewMode = "command";
+      refreshPreview();
+    });
   });
 }
 
@@ -577,7 +641,8 @@ function init() {
   setAuthLinks();
   attachLivePreview();
   attachPlanToggle();
-  setPreviewFromInputs();
+  setDashboardAuthState(false);
+  refreshPreview();
   updatePlanNotice();
 
   dashboardForm?.addEventListener("submit", async (event) => {
