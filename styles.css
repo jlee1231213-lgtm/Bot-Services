@@ -887,6 +887,17 @@ img {
   white-space: nowrap;
 }
 
+.dashboard-panel.is-empty .support-code-panel,
+.dashboard-panel.is-empty .field-grid,
+.dashboard-panel.is-empty > label,
+.dashboard-panel.is-empty .toggle-list,
+.dashboard-panel.is-empty .command-template-panel,
+.dashboard-panel.is-empty .embed-preview,
+.dashboard-panel.is-empty .dashboard-actions,
+.dashboard-panel.is-empty .owner-support-panel {
+  display: none !important;
+}
+
 .subsection-head {
   align-items: flex-start;
   margin-bottom: 14px;

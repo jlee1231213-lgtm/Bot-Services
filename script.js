@@ -156,16 +156,27 @@ function setDashboardAuthState(isSignedIn) {
     serverPanel.hidden = !isSignedIn;
   }
 
-  if (supportCodePanel) {
-    supportCodePanel.hidden = !isSignedIn;
-  }
-
   if (dashboardSignInButton) {
     dashboardSignInButton.hidden = isSignedIn;
   }
 
   if (dashboardSignInWrap) {
     dashboardSignInWrap.hidden = isSignedIn;
+  }
+}
+
+function setDashboardServerState(hasServer) {
+  dashboardForm?.classList.toggle("is-empty", !hasServer);
+
+  if (supportCodePanel) {
+    supportCodePanel.hidden = !hasServer;
+  }
+
+  if (!hasServer) {
+    selectedGuildId = null;
+    guildSettings = null;
+    setText(selectedServerName, "No server selected");
+    setText(supportCodeText, "Select a server");
   }
 }
 
@@ -311,7 +322,10 @@ function renderGuildList(list) {
   serverListContainer.innerHTML = "";
 
   if (!list.length) {
-    serverListContainer.innerHTML = '<p class="server-empty">No manageable servers found yet. Sign in with Discord and make sure you have Manage Server permission.</p>';
+    const message = user
+      ? "No servers found with the bot installed. Add the Logic Systems bot to a server you manage, then refresh this page."
+      : "Sign in with Discord to load your servers.";
+    serverListContainer.innerHTML = `<p class="server-empty">${message}</p>`;
     return;
   }
 
@@ -331,6 +345,7 @@ function renderGuildList(list) {
 
 async function loadUser() {
   setDashboardAuthState(false);
+  setDashboardServerState(false);
   setText(supportCodeText, "Loading...");
   setDashboardStatus("Checking your Discord session...");
 
@@ -348,6 +363,7 @@ async function loadUser() {
         saveSessionToken(null);
       }
       setDashboardAuthState(false);
+      setDashboardServerState(false);
       setText(supportCodeText, "Sign in first");
       setDashboardStatus("Sign in with Discord to load your servers.");
       renderGuildList([]);
@@ -357,6 +373,7 @@ async function loadUser() {
     const data = await res.json();
     user = data.user ?? null;
     setDashboardAuthState(true);
+    setDashboardServerState(false);
     setText(supportCodeText, data.supportCode || "N/A");
     setDashboardStatus(`Signed in as ${user?.username ?? "Discord user"}`);
 
@@ -364,6 +381,7 @@ async function loadUser() {
   } catch (error) {
     console.error("Failed to load user", error);
     setDashboardAuthState(false);
+    setDashboardServerState(false);
     setText(supportCodeText, "Unavailable");
     setDashboardStatus("Could not connect to the dashboard right now.");
   }
@@ -388,16 +406,19 @@ async function loadGuilds() {
     if (guilds.length) {
       await selectGuild(guilds[0].id);
     } else {
-      setDashboardStatus("No manageable servers found for this Discord account.");
+      setDashboardServerState(false);
+      setDashboardStatus("Signed in, but the bot is not in any manageable servers yet.");
     }
   } catch (error) {
     console.error("Failed to load guilds", error);
+    setDashboardServerState(false);
     renderGuildList([]);
   }
 }
 
 async function selectGuild(guildId) {
   selectedGuildId = guildId;
+  setDashboardServerState(true);
   setActiveServer(guildId);
 
   const guild = guilds.find((entry) => entry.id === guildId);
@@ -421,6 +442,7 @@ async function loadGuildSettings(guildId) {
     }
 
     guildSettings = await res.json();
+    setDashboardServerState(true);
     const settings = getCurrentSettings();
     const activeGuild = guilds.find((entry) => entry.id === guildId);
 
@@ -561,6 +583,7 @@ async function openOwnerSupport() {
 
     guildSettings = { settings: data.settings, premium: data.premium };
     selectedGuildId = data.guildId;
+    setDashboardServerState(true);
     setText(selectedServerName, data.settings?.serverName || `Server ${data.guildId}`);
     applySettingsToForm(data.settings);
     renderCommandCards();
