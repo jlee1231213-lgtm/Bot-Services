@@ -1,11 +1,12 @@
 import { createReadStream, existsSync } from "node:fs";
 import { PassThrough } from "node:stream";
-import { AttachmentBuilder, ChannelType, EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ChannelType, EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import PImage from "pureimage";
 
 const setupImageFont = loadSetupImageFont();
 const logicSystemsColor = 0x5865f2;
 const setupFooter = "Powered by Logic Systems • Owned by Pnkstrz_._";
+const ticketButtonId = "logic_systems_open_ticket";
 const staffRoleNames = ["Logic Owner", "Logic Director", "Build Lead", "Senior Support", "Support Specialist", "Trial Support"];
 const customerRoleNames = ["Customer", "Bot Owner", "Partner"];
 
@@ -176,7 +177,7 @@ const starterMessages = [
     channelName: "create-ticket",
     title: "Create a Support Ticket",
     description:
-      "Need help with a bot, dashboard, OAuth login, setup, command error, or request update? Open a ticket and give staff the details below so we can help faster.",
+      "Need help with a bot, dashboard, OAuth login, setup, command error, or request update? Press the button below to open a private support ticket.",
     fields: [
       ["What to include", "Server name, Discord invite, bot name, and what you need fixed or changed."],
       ["For bugs", "Send screenshots, the command name, the error message, and what you expected to happen."],
@@ -527,9 +528,21 @@ async function sendOnce(guild, { channelName, title, description, fields = [] })
     embed.addFields(fields.map(([name, value]) => ({ name, value })));
   }
 
+  const components = channelName === "create-ticket"
+    ? [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(ticketButtonId)
+            .setLabel("Open Support Ticket")
+            .setStyle(ButtonStyle.Primary),
+        ),
+      ]
+    : [];
+
   await channel.send({
     embeds: [embed],
     files: [new AttachmentBuilder(image, { name: imageName })],
+    components,
   });
 }
 
