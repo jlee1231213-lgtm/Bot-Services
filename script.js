@@ -41,12 +41,57 @@ const commandColorInput = dashboardForm?.elements.commandColor ?? null;
 const commandFooterInput = dashboardForm?.elements.commandFooter ?? null;
 
 const commandCatalog = [
-  { key: "startup", name: "STARTUP", desc: "Launch a session announcement." },
-  { key: "release", name: "RELEASE", desc: "Open the session publicly." },
-  { key: "reinvites", name: "REINVITES", desc: "Handle reinvite waves cleanly." },
+  { key: "announce", name: "ANNOUNCE", desc: "Post a custom server announcement." },
+  { key: "antiraid", name: "ANTIRAID", desc: "Show or update anti-raid status." },
+  { key: "balance", name: "BALANCE", desc: "Check a member economy balance." },
+  { key: "ban", name: "BAN", desc: "Ban a member with a clean log." },
+  { key: "cohost", name: "COHOST", desc: "Start co-host tracking." },
+  { key: "cohost-end", name: "COHOST END", desc: "End co-host tracking." },
+  { key: "deposit", name: "DEPOSIT", desc: "Deposit money into an account." },
+  { key: "dmall", name: "DMALL", desc: "DM members in bulk." },
+  { key: "ea", name: "EA", desc: "Announce early access." },
+  { key: "embed", name: "EMBED", desc: "Send a custom embed." },
+  { key: "fullmod", name: "FULLMOD", desc: "Mark moderation coverage as full." },
+  { key: "give-money", name: "GIVE MONEY", desc: "Give money to a member." },
+  { key: "hatepings", name: "HATEPINGS", desc: "Configure unwanted ping handling." },
+  { key: "help", name: "HELP", desc: "Show command help." },
+  { key: "join-vc", name: "JOIN VC", desc: "Ask a member to join voice chat." },
+  { key: "kick", name: "KICK", desc: "Kick a member with a clean log." },
+  { key: "lowmod", name: "LOWMOD", desc: "Alert staff about low moderation." },
+  { key: "membercount", name: "MEMBERCOUNT", desc: "Show server member count." },
+  { key: "modcall", name: "MODCALL", desc: "Request moderator help." },
+  { key: "mute", name: "MUTE", desc: "Mute a member." },
+  { key: "over", name: "OVER", desc: "Announce session over." },
+  { key: "payticket", name: "PAYTICKET", desc: "Handle payment tickets." },
+  { key: "peacetime", name: "PEACETIME", desc: "Update peacetime status." },
   { key: "priority", name: "PRIORITY", desc: "Set priority availability." },
+  { key: "profile", name: "PROFILE", desc: "Show a member profile." },
+  { key: "quota", name: "QUOTA", desc: "Track staff quota." },
+  { key: "register", name: "REGISTER", desc: "Register a member profile." },
+  { key: "reinvites", name: "REINVITES", desc: "Handle reinvite waves cleanly." },
+  { key: "release", name: "RELEASE", desc: "Open the session publicly." },
+  { key: "reset-over-cooldown", name: "RESET OVER COOLDOWN", desc: "Reset over command cooldown." },
+  { key: "reset-startup-cooldown", name: "RESET STARTUP COOLDOWN", desc: "Reset startup command cooldown." },
+  { key: "rules", name: "RULES", desc: "Post server rules." },
+  { key: "say", name: "SAY", desc: "Make the bot say a message." },
+  { key: "scene", name: "SCENE", desc: "Post active scene information." },
+  { key: "settings", name: "SETTINGS", desc: "Show or edit bot settings." },
+  { key: "setup", name: "SETUP", desc: "Run server setup." },
+  { key: "ssd", name: "SSD", desc: "Wrap sessions up clearly." },
+  { key: "ssu", name: "SSU", desc: "Start a session startup." },
   { key: "staff", name: "STAFF", desc: "Post staff-focused notices." },
-  { key: "ssd", name: "SHUTDOWN", desc: "Wrap sessions up clearly." },
+  { key: "staff-profile", name: "STAFF PROFILE", desc: "Show a staff profile." },
+  { key: "startup", name: "STARTUP", desc: "Launch a session announcement." },
+  { key: "status", name: "STATUS", desc: "Show current server status." },
+  { key: "supervise", name: "SUPERVISE", desc: "Supervise a member or scene." },
+  { key: "ticket", name: "TICKET", desc: "Create or manage tickets." },
+  { key: "unmute", name: "UNMUTE", desc: "Unmute a member." },
+  { key: "unregister", name: "UNREGISTER", desc: "Remove a member registration." },
+  { key: "vote", name: "VOTE", desc: "Start a vote." },
+  { key: "warn", name: "WARN", desc: "Warn a member." },
+  { key: "warrant", name: "WARRANT", desc: "Create a warrant notice." },
+  { key: "withdraw", name: "WITHDRAW", desc: "Withdraw money from an account." },
+  { key: "work", name: "WORK", desc: "Work for economy money." },
 ];
 
 let user = null;
@@ -282,14 +327,68 @@ function getActiveTemplate() {
   return settings?.commandTemplates?.[activeCommandKey] ?? null;
 }
 
+function getDefaultCommandTemplate(commandKey) {
+  const command = commandCatalog.find((entry) => entry.key === commandKey);
+  return {
+    title: command?.name || commandKey.toUpperCase(),
+    color: "#5865f2",
+    message: command?.desc || "Command response template.",
+    footer: "Powered by Logic Systems",
+    cooldown: "0",
+    pingRole: "",
+    channel: "",
+    enabled: true,
+  };
+}
+
+function ensureCommandTemplates(settings) {
+  settings.commandTemplates ??= {};
+  commandCatalog.forEach((command) => {
+    settings.commandTemplates[command.key] ??= getDefaultCommandTemplate(command.key);
+  });
+  return settings.commandTemplates;
+}
+
+function readCommandTemplateFromForm(commandKey = activeCommandKey) {
+  const fallback = getDefaultCommandTemplate(commandKey);
+  if (!dashboardForm) return fallback;
+
+  return {
+    ...fallback,
+    title: dashboardForm.elements.commandTitle.value.trim() || fallback.title,
+    color: dashboardForm.elements.commandColor.value || fallback.color,
+    message: dashboardForm.elements.commandMessage.value.trim() || fallback.message,
+    footer: dashboardForm.elements.commandFooter.value.trim() || fallback.footer,
+    cooldown: String(dashboardForm.elements.commandCooldown.value || fallback.cooldown),
+    pingRole: dashboardForm.elements.commandPingRole.value.trim(),
+    channel: dashboardForm.elements.commandChannel.value.trim(),
+    enabled: dashboardForm.elements.commandEnabled.checked,
+  };
+}
+
+function saveActiveCommandTemplateDraft() {
+  const settings = getCurrentSettings();
+  if (!settings || !dashboardForm || !activeCommandKey) return;
+  const templates = ensureCommandTemplates(settings);
+  templates[activeCommandKey] = {
+    ...(templates[activeCommandKey] || getDefaultCommandTemplate(activeCommandKey)),
+    ...readCommandTemplateFromForm(activeCommandKey),
+  };
+}
+
 function applyCommandTemplate(commandKey) {
+  if (activeCommandKey && activeCommandKey !== commandKey) {
+    saveActiveCommandTemplateDraft();
+  }
+
   activeCommandKey = commandKey;
   document.querySelectorAll(".command-card").forEach((card) => {
     card.classList.toggle("active", card.dataset.command === commandKey);
   });
 
-  const template = getCurrentSettings()?.commandTemplates?.[commandKey];
-  if (!dashboardForm || !template) return;
+  const settings = getCurrentSettings();
+  const template = ensureCommandTemplates(settings || {})[commandKey] || getDefaultCommandTemplate(commandKey);
+  if (!dashboardForm) return;
 
   dashboardForm.elements.commandTitle.value = template.title || "";
   dashboardForm.elements.commandColor.value = template.color || "#5865f2";
@@ -308,6 +407,7 @@ function renderCommandCards() {
 
   commandTemplateList.innerHTML = "";
   const settings = getCurrentSettings();
+  if (settings) ensureCommandTemplates(settings);
 
   commandCatalog.forEach((cmd) => {
     const template = settings?.commandTemplates?.[cmd.key];
@@ -479,19 +579,8 @@ async function loadGuildSettings(guildId) {
 
 function buildSettingsPayload() {
   const current = cloneData(getCurrentSettings() || {});
-  const templateUpdates = current.commandTemplates || {};
-
-  templateUpdates[activeCommandKey] = {
-    ...(templateUpdates[activeCommandKey] || {}),
-    title: dashboardForm.elements.commandTitle.value.trim(),
-    color: dashboardForm.elements.commandColor.value,
-    message: dashboardForm.elements.commandMessage.value.trim(),
-    footer: dashboardForm.elements.commandFooter.value.trim(),
-    cooldown: String(dashboardForm.elements.commandCooldown.value || "0"),
-    pingRole: dashboardForm.elements.commandPingRole.value.trim(),
-    channel: dashboardForm.elements.commandChannel.value.trim(),
-    enabled: dashboardForm.elements.commandEnabled.checked,
-  };
+  const templateUpdates = ensureCommandTemplates(current);
+  templateUpdates[activeCommandKey] = readCommandTemplateFromForm(activeCommandKey);
 
   return {
     ...current,
