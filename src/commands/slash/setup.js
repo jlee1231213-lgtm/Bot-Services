@@ -9,6 +9,7 @@ const setupFooter = "Powered by Logic Systems • Owned by Pnkstrz_._";
 const ticketButtonId = "logic_systems_open_ticket";
 const staffRoleNames = ["Logic Owner", "Logic Director", "Build Lead", "Senior Support", "Support Specialist", "Trial Support"];
 const customerRoleNames = ["Customer", "Bot Owner", "Partner"];
+const legacyRoleNames = ["Logic Administrator", "Logic Manager", "Developer", "Support Team"];
 
 const serviceRoles = [
   { name: "Logic Owner", color: 0x5865f2, hoist: true, permissions: [PermissionFlagsBits.Administrator] },
@@ -243,6 +244,7 @@ export async function execute(interaction) {
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
+  const deletedRoles = await deleteLegacyRoles(interaction.guild);
   const roles = await ensureRoles(interaction.guild);
   const deletedChannels = await deleteExistingChannels(interaction.guild);
   const createdChannels = [];
@@ -268,7 +270,7 @@ export async function execute(interaction) {
         .setColor(logicSystemsColor)
         .setTitle("Logic Systems Server Template Created")
         .setDescription(
-          `Deleted **${deletedChannels}** existing channels, rebuilt **${serviceRoles.length} roles**, **${serviceCategories.length} categories**, **${createdChannels.length} text channels**, and sent the starter embeds with channel-themed images.\n\nNext: place your staff above the bot role if needed, add your logo/banner, and run \`/settings\` to customize bot embeds.`,
+          `Deleted **${deletedChannels}** existing channels, removed **${deletedRoles}** old Logic roles, rebuilt **${serviceRoles.length} roles**, **${serviceCategories.length} categories**, **${createdChannels.length} text channels**, and sent fresh branded starter embeds.\n\nNext: place your staff above the bot role if needed, add your logo/banner, and run \`/settings\` to customize bot embeds.`,
         )
         .setImage("attachment://logic-systems-setup-template.png")
         .setFooter({ text: setupFooter }),
@@ -439,6 +441,23 @@ async function ensureRoles(guild) {
   return roles;
 }
 
+async function deleteLegacyRoles(guild) {
+  let deleted = 0;
+
+  for (const roleName of legacyRoleNames) {
+    const role = guild.roles.cache.find((entry) => entry.name === roleName);
+    if (!role || role.managed || !role.editable) continue;
+    try {
+      await role.delete("Logic Systems setup removing legacy role names");
+      deleted += 1;
+    } catch {
+      // Discord blocks deletion when the bot role is too low; keep setup moving.
+    }
+  }
+
+  return deleted;
+}
+
 async function deleteExistingChannels(guild) {
   const channels = [...guild.channels.cache.values()].sort((a, b) => {
     if (a.type === ChannelType.GuildCategory && b.type !== ChannelType.GuildCategory) return 1;
@@ -512,8 +531,11 @@ async function sendOnce(guild, { channelName, title, description, fields = [] })
   const channel = guild.channels.cache.find((item) => item.type === ChannelType.GuildText && item.name === channelName);
   if (!channel) return;
 
-  const recent = await channel.messages.fetch({ limit: 20 }).catch(() => null);
-  if (recent?.some((message) => message.author.id === guild.client.user.id && message.embeds[0]?.title === title)) return;
+  const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+  const staleBotMessages = recent?.filter((message) => message.author.id === guild.client.user.id) ?? [];
+  for (const message of staleBotMessages.values()) {
+    await message.delete().catch(() => null);
+  }
 
   const imageName = `${channelName}-info-card.png`;
   const image = await starterChannelImage(channelName);
