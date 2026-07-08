@@ -1,25 +1,93 @@
 import { createReadStream, existsSync } from "node:fs";
 import { PassThrough } from "node:stream";
-import { AttachmentBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { AttachmentBuilder, ChannelType, EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import PImage from "pureimage";
 
 const setupImageFont = loadSetupImageFont();
+const logicSystemsColor = 0x5865f2;
+const setupFooter = "Powered by Logic Systems • Owned by Pnkstrz_._";
 
 const serviceRoles = [
-  { name: "Logic Owner", color: 0x5865f2, hoist: true },
-  { name: "Logic Administrator", color: 0x64d8ff, hoist: true },
-  { name: "Logic Manager", color: 0x23c46e, hoist: true },
-  { name: "Developer", color: 0xf2c94c, hoist: true },
-  { name: "Support Team", color: 0x9b8cff, hoist: true },
-  { name: "Trial Support", color: 0xaeb6cc, hoist: false },
-  { name: "Customer", color: 0x76f0d2, hoist: false },
-  { name: "Bot Owner", color: 0xff9f43, hoist: false },
-  { name: "Pending Request", color: 0xffd166, hoist: false },
-  { name: "Completed Request", color: 0x23c46e, hoist: false },
-  { name: "Announcements Ping", color: 0x5865f2, hoist: false },
-  { name: "Updates Ping", color: 0x64d8ff, hoist: false },
-  { name: "Support Ping", color: 0xff6b6b, hoist: false },
-  { name: "Partner", color: 0x9b8cff, hoist: false },
+  { name: "Logic Owner", color: 0x5865f2, hoist: true, permissions: [PermissionFlagsBits.Administrator] },
+  {
+    name: "Logic Administrator",
+    color: 0x64d8ff,
+    hoist: true,
+    permissions: [
+      PermissionFlagsBits.ManageGuild,
+      PermissionFlagsBits.ManageChannels,
+      PermissionFlagsBits.ManageRoles,
+      PermissionFlagsBits.ManageMessages,
+      PermissionFlagsBits.ManageThreads,
+      PermissionFlagsBits.KickMembers,
+      PermissionFlagsBits.BanMembers,
+      PermissionFlagsBits.ModerateMembers,
+      PermissionFlagsBits.ViewAuditLog,
+      PermissionFlagsBits.MentionEveryone,
+    ],
+  },
+  {
+    name: "Logic Manager",
+    color: 0x23c46e,
+    hoist: true,
+    permissions: [
+      PermissionFlagsBits.ManageChannels,
+      PermissionFlagsBits.ManageMessages,
+      PermissionFlagsBits.ManageThreads,
+      PermissionFlagsBits.ModerateMembers,
+      PermissionFlagsBits.MoveMembers,
+      PermissionFlagsBits.MuteMembers,
+      PermissionFlagsBits.DeafenMembers,
+    ],
+  },
+  {
+    name: "Developer",
+    color: 0xf2c94c,
+    hoist: true,
+    permissions: [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.ReadMessageHistory,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.EmbedLinks,
+      PermissionFlagsBits.ManageWebhooks,
+    ],
+  },
+  {
+    name: "Support Team",
+    color: 0x9b8cff,
+    hoist: true,
+    permissions: [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.ReadMessageHistory,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.EmbedLinks,
+      PermissionFlagsBits.ManageMessages,
+      PermissionFlagsBits.CreatePrivateThreads,
+      PermissionFlagsBits.CreatePublicThreads,
+    ],
+  },
+  {
+    name: "Trial Support",
+    color: 0xaeb6cc,
+    hoist: false,
+    permissions: [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.ReadMessageHistory,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.EmbedLinks,
+    ],
+  },
+  { name: "Customer", color: 0x76f0d2, hoist: false, permissions: [] },
+  { name: "Bot Owner", color: 0xff9f43, hoist: false, permissions: [] },
+  { name: "Pending Request", color: 0xffd166, hoist: false, permissions: [] },
+  { name: "Completed Request", color: 0x23c46e, hoist: false, permissions: [] },
+  { name: "Announcements Ping", color: 0x5865f2, hoist: false, permissions: [] },
+  { name: "Updates Ping", color: 0x64d8ff, hoist: false, permissions: [] },
+  { name: "Support Ping", color: 0xff6b6b, hoist: false, permissions: [] },
+  { name: "Partner", color: 0x9b8cff, hoist: false, permissions: [] },
 ];
 
 const serviceCategories = [
@@ -75,6 +143,38 @@ const serviceCategories = [
   },
 ];
 
+const voiceChannelTemplates = [
+  { name: "Support VC", staffOnly: false, category: "Support" },
+  { name: "Waiting Room", staffOnly: false, category: "Support" },
+  { name: "Staff VC", staffOnly: true, category: "Staff Area" },
+];
+
+const starterMessages = [
+  {
+    channelName: "rules",
+    title: "Logic Systems Rules",
+    description:
+      "1. Be respectful.\n2. No spam, raids, or random staff pings.\n3. Bot requests are free, but staff can deny unclear requests.\n4. Do not claim our systems or branding as your own.\n5. Open a ticket for support.\n6. Follow Discord Terms of Service.",
+  },
+  {
+    channelName: "request-a-bot",
+    title: "Free Custom Bot Request",
+    description:
+      "**Server Name:**\n**Discord Invite:**\n**Bot Name:**\n**Bot Style:**\n**Main Color:**\n**Commands Wanted:**\n**Staff Roles:**\n**Channels Needed:**\n**Extra Notes:**",
+  },
+  {
+    channelName: "create-ticket",
+    title: "Support Tickets",
+    description:
+      "Need help with a bot, request, setup, or dashboard issue? Open a ticket and include your server name, what you need, screenshots if something is broken, and the command or dashboard setting involved.",
+  },
+  {
+    channelName: "service-info",
+    title: "Logic Systems Services",
+    description: "Free custom Roblox RP bots with startup, release, reinvites, staff tools, tickets, dashboard command templates, and custom embeds.",
+  },
+];
+
 export const data = new SlashCommandBuilder()
   .setName("setup")
   .setDescription("Set up a Logic Systems bot-service Discord server template.")
@@ -93,27 +193,47 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const template = interaction.options.getString("template") ?? "preview";
 
-  if (template === "preview") {
-    const image = await setupTemplateImage();
-    await interaction.reply({ embeds: [previewEmbed().setImage("attachment://logic-systems-setup-template.png")], files: [image], ephemeral: true });
-    return;
-  }
-
-  if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageChannels | PermissionFlagsBits.ManageRoles)) {
+  if (!isLogicSystemsGuild(interaction.guildId)) {
     await interaction.reply({
-      content: "I need `Manage Channels` and `Manage Roles` before I can build the server template.",
-      ephemeral: true,
+      content:
+        "This `/setup` command is locked to the official Logic Systems Discord server. Customer servers should use the dashboard and normal bot commands instead.",
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  if (template === "preview") {
+    const image = await setupTemplateImage();
+    await interaction.reply({
+      embeds: [previewEmbed().setImage("attachment://logic-systems-setup-template.png")],
+      files: [image],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (
+    !interaction.guild.members.me.permissions.has(
+      PermissionFlagsBits.ManageChannels | PermissionFlagsBits.ManageRoles | PermissionFlagsBits.ManageGuild,
+    )
+  ) {
+    await interaction.reply({
+      content: "I need `Manage Guild`, `Manage Channels`, and `Manage Roles` before I can rebuild the server template.",
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const roles = await ensureRoles(interaction.guild);
+  const deletedChannels = await deleteExistingChannels(interaction.guild);
   const createdChannels = [];
+  const categoryMap = new Map();
 
   for (const categoryTemplate of serviceCategories) {
     const category = await ensureCategory(interaction.guild, categoryTemplate, roles);
+    categoryMap.set(categoryTemplate.name, category);
 
     for (const [channelName, topic] of categoryTemplate.channels) {
       const channel = await ensureTextChannel(interaction.guild, category, channelName, topic, categoryTemplate.staffOnly, roles);
@@ -121,20 +241,20 @@ export async function execute(interaction) {
     }
   }
 
-  await ensureVoiceChannels(interaction.guild, roles);
+  await ensureVoiceChannels(interaction.guild, roles, categoryMap);
   await postStarterMessages(interaction.guild);
 
   const image = await setupTemplateImage();
   await interaction.editReply({
     embeds: [
       new EmbedBuilder()
-        .setColor(0x23c46e)
+        .setColor(logicSystemsColor)
         .setTitle("Logic Systems Server Template Created")
         .setDescription(
-          `Created or verified **${serviceRoles.length} roles**, **${serviceCategories.length} categories**, **${createdChannels.length} text channels**, and starter request/support messages.\n\nNext: adjust channel permissions, add your logo/banner, and run \`/settings\` to customize bot embeds.`,
+          `Deleted **${deletedChannels}** existing channels, rebuilt **${serviceRoles.length} roles**, **${serviceCategories.length} categories**, **${createdChannels.length} text channels**, and sent the starter embeds with channel-themed images.\n\nNext: place your staff above the bot role if needed, add your logo/banner, and run \`/settings\` to customize bot embeds.`,
         )
         .setImage("attachment://logic-systems-setup-template.png")
-        .setFooter({ text: "Powered by Logic Systems" }),
+        .setFooter({ text: setupFooter }),
     ],
     files: [image],
   });
@@ -142,7 +262,7 @@ export async function execute(interaction) {
 
 function previewEmbed() {
   return new EmbedBuilder()
-    .setColor(0x5865f2)
+    .setColor(logicSystemsColor)
     .setTitle("Logic Systems Bot-Service Template")
     .setDescription(
       [
@@ -153,7 +273,18 @@ function previewEmbed() {
         "Run `/setup template:create` to build it.",
       ].join("\n"),
     )
-    .setFooter({ text: "Free custom bot service layout" });
+    .setFooter({ text: setupFooter });
+}
+
+function isLogicSystemsGuild(guildId) {
+  const allowedGuildIds = [
+    process.env.LOGIC_SYSTEMS_GUILD_ID,
+    process.env.DISCORD_GUILD_ID,
+  ]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean);
+
+  return allowedGuildIds.length > 0 && allowedGuildIds.includes(String(guildId));
 }
 
 async function setupTemplateImage() {
@@ -269,18 +400,43 @@ async function ensureRoles(guild) {
   const roles = new Map();
   for (const roleTemplate of serviceRoles) {
     const existing = guild.roles.cache.find((role) => role.name === roleTemplate.name);
-    const role =
-      existing ??
-      (await guild.roles.create({
+    const role = existing
+      ? await existing.edit({
+          colors: { primaryColor: roleTemplate.color },
+          hoist: roleTemplate.hoist,
+          mentionable: roleTemplate.name.includes("Ping"),
+          permissions: roleTemplate.permissions,
+          reason: "Logic Systems server template setup",
+        })
+      : await guild.roles.create({
         name: roleTemplate.name,
-        color: roleTemplate.color,
+        colors: { primaryColor: roleTemplate.color },
         hoist: roleTemplate.hoist,
         mentionable: roleTemplate.name.includes("Ping"),
+        permissions: roleTemplate.permissions,
         reason: "Logic Systems server template setup",
-      }));
+      });
     roles.set(roleTemplate.name, role);
   }
   return roles;
+}
+
+async function deleteExistingChannels(guild) {
+  const channels = [...guild.channels.cache.values()].sort((a, b) => {
+    if (a.type === ChannelType.GuildCategory && b.type !== ChannelType.GuildCategory) return 1;
+    if (a.type !== ChannelType.GuildCategory && b.type === ChannelType.GuildCategory) return -1;
+    return 0;
+  });
+
+  let deleted = 0;
+
+  for (const channel of channels) {
+    if (!channel.deletable) continue;
+    await channel.delete("Logic Systems setup rebuilding server layout");
+    deleted += 1;
+  }
+
+  return deleted;
 }
 
 async function ensureCategory(guild, categoryTemplate, roles) {
@@ -292,7 +448,7 @@ async function ensureCategory(guild, categoryTemplate, roles) {
   return guild.channels.create({
     name: categoryTemplate.name,
     type: ChannelType.GuildCategory,
-    permissionOverwrites: categoryTemplate.staffOnly ? staffOnlyOverwrites(guild, roles) : [],
+    permissionOverwrites: categoryTemplate.staffOnly ? staffOnlyOverwrites(guild, roles) : publicChannelOverwrites(guild, roles),
     reason: "Logic Systems server template setup",
   });
 }
@@ -308,71 +464,85 @@ async function ensureTextChannel(guild, category, name, topic, staffOnly, roles)
     type: ChannelType.GuildText,
     parent: category.id,
     topic,
-    permissionOverwrites: staffOnly ? staffOnlyOverwrites(guild, roles) : [],
+    permissionOverwrites: staffOnly ? staffOnlyOverwrites(guild, roles) : publicChannelOverwrites(guild, roles),
     reason: "Logic Systems server template setup",
   });
 }
 
-async function ensureVoiceChannels(guild, roles) {
-  const voiceChannels = [
-    ["Support VC", false],
-    ["Waiting Room", false],
-    ["Staff VC", true],
-  ];
-
-  for (const [name, staffOnly] of voiceChannels) {
-    const existing = guild.channels.cache.find((channel) => channel.type === ChannelType.GuildVoice && channel.name === name);
+async function ensureVoiceChannels(guild, roles, categoryMap) {
+  for (const template of voiceChannelTemplates) {
+    const existing = guild.channels.cache.find((channel) => channel.type === ChannelType.GuildVoice && channel.name === template.name);
     if (existing) continue;
 
     await guild.channels.create({
-      name,
+      name: template.name,
       type: ChannelType.GuildVoice,
-      permissionOverwrites: staffOnly ? staffOnlyOverwrites(guild, roles) : [],
+      parent: categoryMap.get(template.category)?.id,
+      permissionOverwrites: template.staffOnly ? staffVoiceOverwrites(guild, roles) : publicVoiceOverwrites(guild, roles),
       reason: "Logic Systems server template setup",
     });
   }
 }
 
 async function postStarterMessages(guild) {
-  await sendOnce(
-    guild,
-    "rules",
-    "Logic Systems Rules",
-    "1. Be respectful.\n2. No spam, raids, or random staff pings.\n3. Bot requests are free, but staff can deny unclear requests.\n4. Do not claim our systems or branding as your own.\n5. Open a ticket for support.\n6. Follow Discord Terms of Service.",
-  );
-
-  await sendOnce(
-    guild,
-    "request-a-bot",
-    "Free Custom Bot Request",
-    "**Server Name:**\n**Discord Invite:**\n**Bot Name:**\n**Bot Style:**\n**Main Color:**\n**Commands Wanted:**\n**Staff Roles:**\n**Channels Needed:**\n**Extra Notes:**",
-  );
-
-  await sendOnce(
-    guild,
-    "create-ticket",
-    "Support Tickets",
-    "Need help with a bot, request, setup, or dashboard issue? Open a ticket and include your server name, what you need, screenshots if something is broken, and the command or dashboard setting involved.",
-  );
-
-  await sendOnce(
-    guild,
-    "service-info",
-    "Logic Systems Services",
-    "Free custom Roblox RP bots with startup, release, reinvites, staff tools, tickets, dashboard command templates, and custom embeds.",
-  );
+  for (const message of starterMessages) {
+    await sendOnce(guild, message);
+  }
 }
 
-async function sendOnce(guild, channelName, title, description) {
+async function sendOnce(guild, { channelName, title, description }) {
   const channel = guild.channels.cache.find((item) => item.type === ChannelType.GuildText && item.name === channelName);
   if (!channel) return;
 
   const recent = await channel.messages.fetch({ limit: 20 }).catch(() => null);
   if (recent?.some((message) => message.author.id === guild.client.user.id && message.embeds[0]?.title === title)) return;
 
+  const imageName = `${channelName}-info-card.png`;
+  const image = await starterChannelImage(channelName);
   await channel.send({
-    embeds: [new EmbedBuilder().setColor(0x5865f2).setTitle(title).setDescription(description).setFooter({ text: "Powered by Logic Systems" })],
+    embeds: [
+      new EmbedBuilder()
+        .setColor(logicSystemsColor)
+        .setTitle(title)
+        .setDescription(description)
+        .setImage(`attachment://${imageName}`)
+        .setFooter({ text: setupFooter }),
+    ],
+    files: [new AttachmentBuilder(image, { name: imageName })],
   });
+}
+
+function publicChannelOverwrites(guild, roles) {
+  const customerRoles = ["Customer", "Bot Owner", "Partner"]
+    .map((name) => roles.get(name)?.id)
+    .filter(Boolean);
+
+  const publicStaffRoles = ["Logic Owner", "Logic Administrator", "Logic Manager", "Developer", "Support Team", "Trial Support"]
+    .map((name) => roles.get(name)?.id)
+    .filter(Boolean);
+
+  return [
+    {
+      id: guild.roles.everyone.id,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
+      deny: [PermissionFlagsBits.SendTTSMessages],
+    },
+    ...customerRoles.map((id) => ({
+      id,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+    })),
+    ...publicStaffRoles.map((id) => ({
+      id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+        PermissionFlagsBits.ManageMessages,
+      ],
+    })),
+  ];
 }
 
 function staffOnlyOverwrites(guild, roles) {
@@ -390,4 +560,109 @@ function staffOnlyOverwrites(guild, roles) {
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
     })),
   ];
+}
+
+function publicVoiceOverwrites(guild, roles) {
+  const staffRoles = ["Logic Owner", "Logic Administrator", "Logic Manager", "Developer", "Support Team", "Trial Support"]
+    .map((name) => roles.get(name)?.id)
+    .filter(Boolean);
+
+  const customerRoles = ["Customer", "Bot Owner", "Partner"]
+    .map((name) => roles.get(name)?.id)
+    .filter(Boolean);
+
+  return [
+    {
+      id: guild.roles.everyone.id,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect, PermissionFlagsBits.Speak],
+    },
+    ...customerRoles.map((id) => ({
+      id,
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect, PermissionFlagsBits.Speak],
+    })),
+    ...staffRoles.map((id) => ({
+      id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.Connect,
+        PermissionFlagsBits.Speak,
+        PermissionFlagsBits.MoveMembers,
+        PermissionFlagsBits.MuteMembers,
+        PermissionFlagsBits.DeafenMembers,
+      ],
+    })),
+  ];
+}
+
+function staffVoiceOverwrites(guild, roles) {
+  const staffRoles = ["Logic Owner", "Logic Administrator", "Logic Manager", "Developer", "Support Team", "Trial Support"]
+    .map((name) => roles.get(name)?.id)
+    .filter(Boolean);
+
+  return [
+    {
+      id: guild.roles.everyone.id,
+      deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
+    },
+    ...staffRoles.map((id) => ({
+      id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.Connect,
+        PermissionFlagsBits.Speak,
+        PermissionFlagsBits.MoveMembers,
+        PermissionFlagsBits.MuteMembers,
+        PermissionFlagsBits.DeafenMembers,
+      ],
+    })),
+  ];
+}
+
+async function starterChannelImage(channelName, color) {
+  const width = 1983;
+  const height = 793;
+  const image = PImage.make(width, height);
+  const context = image.getContext("2d");
+  const headline = `#${channelName}`;
+  const ownerText = "Owned by Pnkstrz_._";
+  const background = await PImage.decodePNGFromStream(createReadStream("logic-systems-banner-logo-next-to-text-clean.png"));
+  const headlineWidth = measureText(context, headline, 120);
+  const ownerWidth = measureText(context, ownerText, 28);
+
+  context.drawImage(background, 0, 0, width, height);
+
+  context.fillStyle = "rgba(20, 26, 180, 0.16)";
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "rgba(255,255,255,0.10)";
+  roundRect(context, 560, 332, 860, 72, 22);
+  context.fill();
+
+  drawText(context, headline, (width - headlineWidth) / 2, 378, 120, "#ffffff");
+
+  context.fillStyle = "rgba(255,255,255,0.14)";
+  roundRect(context, 804, 610, 376, 56, 18);
+  context.fill();
+  drawText(context, ownerText, (width - ownerWidth) / 2, 648, 28, "rgba(255,255,255,0.92)");
+
+  return encodePng(image);
+}
+
+function measureText(context, text, size) {
+  context.font = `${size}px ${setupImageFont}`;
+  return context.measureText(text).width;
+}
+
+function roundRect(context, x, y, width, height, radius) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
 }
