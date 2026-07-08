@@ -6,11 +6,13 @@ import PImage from "pureimage";
 const setupImageFont = loadSetupImageFont();
 const logicSystemsColor = 0x5865f2;
 const setupFooter = "Powered by Logic Systems • Owned by Pnkstrz_._";
+const staffRoleNames = ["Logic Owner", "Logic Director", "Build Lead", "Senior Support", "Support Specialist", "Trial Support"];
+const customerRoleNames = ["Customer", "Bot Owner", "Partner"];
 
 const serviceRoles = [
   { name: "Logic Owner", color: 0x5865f2, hoist: true, permissions: [PermissionFlagsBits.Administrator] },
   {
-    name: "Logic Administrator",
+    name: "Logic Director",
     color: 0x64d8ff,
     hoist: true,
     permissions: [
@@ -27,7 +29,7 @@ const serviceRoles = [
     ],
   },
   {
-    name: "Logic Manager",
+    name: "Build Lead",
     color: 0x23c46e,
     hoist: true,
     permissions: [
@@ -41,7 +43,7 @@ const serviceRoles = [
     ],
   },
   {
-    name: "Developer",
+    name: "Senior Support",
     color: 0xf2c94c,
     hoist: true,
     permissions: [
@@ -54,7 +56,7 @@ const serviceRoles = [
     ],
   },
   {
-    name: "Support Team",
+    name: "Support Specialist",
     color: 0x9b8cff,
     hoist: true,
     permissions: [
@@ -92,22 +94,29 @@ const serviceRoles = [
 
 const serviceCategories = [
   {
-    name: "Information",
+    name: "Start Here",
     channels: [
-      ["welcome", "Start here for Logic Systems info."],
-      ["announcements", "Service updates and important notices."],
+      ["welcome", "Start here for Logic Systems info, links, and next steps."],
       ["rules", "Server rules and service expectations."],
-      ["faq", "Common questions about free custom bots."],
-      ["service-info", "What Logic Systems provides."],
-      ["bot-showcase", "Finished bots, previews, and demos."],
+      ["service-info", "What Logic Systems provides and how free bot builds work."],
+      ["faq", "Common questions about free custom bots, timelines, and support."],
     ],
   },
   {
-    name: "Support",
+    name: "Updates",
     channels: [
-      ["create-ticket", "Open support for setup, dashboard, and bot issues."],
-      ["support-status", "Support availability and wait times."],
-      ["bug-reports", "Report broken commands or website issues."],
+      ["announcements", "Major Logic Systems notices and important service updates."],
+      ["status", "Live service status, outages, cooldowns, and maintenance notes."],
+      ["showcase", "Finished bots, previews, dashboard screenshots, and demos."],
+      ["vouches", "Public customer feedback and service reviews."],
+    ],
+  },
+  {
+    name: "Support Desk",
+    channels: [
+      ["create-ticket", "Open support for setup, dashboard, OAuth, bot, and command issues."],
+      ["support-status", "Support availability, queue status, and wait times."],
+      ["bug-reports", "Report broken commands, website issues, or Discord setup problems."],
       ["suggestions", "Suggest commands, dashboard options, or service ideas."],
     ],
   },
@@ -115,9 +124,9 @@ const serviceCategories = [
     name: "Bot Requests",
     channels: [
       ["request-a-bot", "Request a free custom bot using the format posted here."],
-      ["request-status", "Staff updates for pending custom bot requests."],
-      ["finished-bots", "Completed custom bot deliveries."],
-      ["reviews", "Customer vouches and service reviews."],
+      ["request-status", "Public queue updates for pending custom bot requests."],
+      ["finished-bots", "Completed custom bot deliveries and handoff notes."],
+      ["customer-info", "Customer instructions for dashboards, setup, and bot invites."],
     ],
   },
   {
@@ -125,18 +134,18 @@ const serviceCategories = [
     channels: [
       ["general", "Community chat."],
       ["media", "Images, clips, and server previews."],
-      ["vouches", "Public service feedback."],
       ["partnerships", "Partnership requests and ads approved by staff."],
     ],
   },
   {
-    name: "Staff Area",
+    name: "Staff HQ",
     staffOnly: true,
     channels: [
       ["staff-chat", "Private staff discussion."],
-      ["request-queue", "New custom bot requests."],
-      ["claimed-requests", "Requests currently being handled."],
-      ["bot-progress", "Build notes and progress updates."],
+      ["staff-announcements", "Internal announcements and staff reminders."],
+      ["request-intake", "New custom bot requests waiting for review."],
+      ["active-builds", "Requests currently being built or configured."],
+      ["build-review", "Final QA, screenshots, and handoff checks."],
       ["staff-logs", "Internal staff logs."],
       ["admin-notes", "Owner and admin notes."],
     ],
@@ -144,9 +153,10 @@ const serviceCategories = [
 ];
 
 const voiceChannelTemplates = [
-  { name: "Support VC", staffOnly: false, category: "Support" },
-  { name: "Waiting Room", staffOnly: false, category: "Support" },
-  { name: "Staff VC", staffOnly: true, category: "Staff Area" },
+  { name: "Support Waiting Room", staffOnly: false, category: "Support Desk" },
+  { name: "Customer Support VC", staffOnly: false, category: "Support Desk" },
+  { name: "Staff Build Room", staffOnly: true, category: "Staff HQ" },
+  { name: "Staff Meeting Room", staffOnly: true, category: "Staff HQ" },
 ];
 
 const starterMessages = [
@@ -164,9 +174,15 @@ const starterMessages = [
   },
   {
     channelName: "create-ticket",
-    title: "Support Tickets",
+    title: "Create a Support Ticket",
     description:
-      "Need help with a bot, request, setup, or dashboard issue? Open a ticket and include your server name, what you need, screenshots if something is broken, and the command or dashboard setting involved.",
+      "Need help with a bot, dashboard, OAuth login, setup, command error, or request update? Open a ticket and give staff the details below so we can help faster.",
+    fields: [
+      ["What to include", "Server name, Discord invite, bot name, and what you need fixed or changed."],
+      ["For bugs", "Send screenshots, the command name, the error message, and what you expected to happen."],
+      ["For setup help", "Tell us which channels, roles, embeds, or dashboard settings you want changed."],
+      ["Safety reminder", "Never send your Discord password or bot token in a ticket."],
+    ],
   },
   {
     channelName: "service-info",
@@ -266,9 +282,10 @@ function previewEmbed() {
     .setTitle("Logic Systems Bot-Service Template")
     .setDescription(
       [
-        "**Creates categories:** Information, Support, Bot Requests, Community, Staff Area",
-        "**Creates roles:** Owner, Administrator, Manager, Developer, Support Team, Customer, Bot Owner, pings, and request statuses",
-        "**Posts starter messages:** rules, request format, ticket panel copy, and service info",
+        "**Creates categories:** Start Here, Updates, Support Desk, Bot Requests, Community, Staff HQ",
+        "**Creates staff roles:** Owner, Director, Build Lead, Senior Support, Support Specialist, Trial Support",
+        "**Creates customer roles:** Customer, Bot Owner, Partner, request statuses, and ping roles",
+        "**Posts starter messages:** rules, request format, ticket intake, and service info",
         "",
         "Run `/setup template:create` to build it.",
       ].join("\n"),
@@ -304,21 +321,21 @@ async function renderSetupTemplateImage() {
   context.fillRect(0, 0, width, height);
 
   drawText(context, "LOGIC SYSTEMS", 116, 125, 48, "rgba(255,255,255,0.82)");
-  drawText(context, "SERVER SETUP TEMPLATE", 116, 190, 88, "#ffffff");
-  drawText(context, "Categories and channels created by /setup", 120, 292, 34, "rgba(255,255,255,0.82)");
+  drawText(context, "STAFF SERVER SETUP", 116, 190, 88, "#ffffff");
+  drawText(context, "Official Logic Systems staff, support, and bot-request workspace", 120, 292, 34, "rgba(255,255,255,0.82)");
 
-  const columnWidth = 338;
-  const startX = 118;
+  const columnWidth = 280;
+  const startX = 104;
   const startY = 382;
-  const columnGap = 28;
+  const columnGap = 22;
 
   for (const [index, category] of serviceCategories.entries()) {
     const x = startX + index * (columnWidth + columnGap);
     drawPanel(context, x, startY, columnWidth, 280);
-    drawText(context, category.name.toUpperCase(), x + 26, startY + 50, 30, "#ffffff");
+    drawText(context, category.name.toUpperCase(), x + 22, startY + 48, 25, "#ffffff");
 
     const channels = category.channels.map(([name]) => `# ${name}`);
-    drawWrappedList(context, channels, x + 28, startY + 91, columnWidth - 56, 26, 30);
+    drawWrappedList(context, channels, x + 24, startY + 88, columnWidth - 48, 22, 27);
   }
 
   return encodePng(image);
@@ -490,7 +507,7 @@ async function postStarterMessages(guild) {
   }
 }
 
-async function sendOnce(guild, { channelName, title, description }) {
+async function sendOnce(guild, { channelName, title, description, fields = [] }) {
   const channel = guild.channels.cache.find((item) => item.type === ChannelType.GuildText && item.name === channelName);
   if (!channel) return;
 
@@ -499,25 +516,29 @@ async function sendOnce(guild, { channelName, title, description }) {
 
   const imageName = `${channelName}-info-card.png`;
   const image = await starterChannelImage(channelName);
+  const embed = new EmbedBuilder()
+    .setColor(logicSystemsColor)
+    .setTitle(title)
+    .setDescription(description)
+    .setImage(`attachment://${imageName}`)
+    .setFooter({ text: setupFooter });
+
+  if (fields.length) {
+    embed.addFields(fields.map(([name, value]) => ({ name, value })));
+  }
+
   await channel.send({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(logicSystemsColor)
-        .setTitle(title)
-        .setDescription(description)
-        .setImage(`attachment://${imageName}`)
-        .setFooter({ text: setupFooter }),
-    ],
+    embeds: [embed],
     files: [new AttachmentBuilder(image, { name: imageName })],
   });
 }
 
 function publicChannelOverwrites(guild, roles) {
-  const customerRoles = ["Customer", "Bot Owner", "Partner"]
+  const customerRoles = customerRoleNames
     .map((name) => roles.get(name)?.id)
     .filter(Boolean);
 
-  const publicStaffRoles = ["Logic Owner", "Logic Administrator", "Logic Manager", "Developer", "Support Team", "Trial Support"]
+  const publicStaffRoles = staffRoleNames
     .map((name) => roles.get(name)?.id)
     .filter(Boolean);
 
@@ -546,7 +567,7 @@ function publicChannelOverwrites(guild, roles) {
 }
 
 function staffOnlyOverwrites(guild, roles) {
-  const staffRoles = ["Logic Owner", "Logic Administrator", "Logic Manager", "Developer", "Support Team", "Trial Support"]
+  const staffRoles = staffRoleNames
     .map((name) => roles.get(name)?.id)
     .filter(Boolean);
 
@@ -563,11 +584,11 @@ function staffOnlyOverwrites(guild, roles) {
 }
 
 function publicVoiceOverwrites(guild, roles) {
-  const staffRoles = ["Logic Owner", "Logic Administrator", "Logic Manager", "Developer", "Support Team", "Trial Support"]
+  const staffRoles = staffRoleNames
     .map((name) => roles.get(name)?.id)
     .filter(Boolean);
 
-  const customerRoles = ["Customer", "Bot Owner", "Partner"]
+  const customerRoles = customerRoleNames
     .map((name) => roles.get(name)?.id)
     .filter(Boolean);
 
@@ -595,7 +616,7 @@ function publicVoiceOverwrites(guild, roles) {
 }
 
 function staffVoiceOverwrites(guild, roles) {
-  const staffRoles = ["Logic Owner", "Logic Administrator", "Logic Manager", "Developer", "Support Team", "Trial Support"]
+  const staffRoles = staffRoleNames
     .map((name) => roles.get(name)?.id)
     .filter(Boolean);
 
