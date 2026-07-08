@@ -302,7 +302,7 @@ function isLogicSystemsGuild(guildId) {
     process.env.DISCORD_GUILD_ID,
   ]
     .map((value) => String(value ?? "").trim())
-    .filter(Boolean);
+    .filter((value) => /^\d{17,20}$/.test(value));
 
   return allowedGuildIds.length > 0 && allowedGuildIds.includes(String(guildId));
 }

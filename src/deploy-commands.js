@@ -4,7 +4,7 @@ import { commands } from "./commands.js";
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
-const guildId = process.env.DISCORD_GUILD_ID;
+const guildId = cleanSnowflake(process.env.DISCORD_GUILD_ID);
 
 if (!token || !clientId) {
   throw new Error("DISCORD_TOKEN and DISCORD_CLIENT_ID are required.");
@@ -18,4 +18,9 @@ if (guildId) {
 } else {
   await rest.put(Routes.applicationCommands(clientId), { body: commands });
   console.log("Registered global commands.");
+}
+
+function cleanSnowflake(value) {
+  const trimmed = String(value ?? "").trim();
+  return /^\d{17,20}$/.test(trimmed) ? trimmed : "";
 }
