@@ -376,7 +376,6 @@ export function createServer() {
       redirect_uri: `${requestBackendUrl}/auth/discord/callback`,
       response_type: "code",
       scope: "identify guilds",
-      prompt: "none",
     });
     if (returnTo) params.set("state", createOAuthState(returnTo));
 
