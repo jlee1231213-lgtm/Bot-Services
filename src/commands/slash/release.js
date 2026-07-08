@@ -15,27 +15,7 @@ export const data = new SlashCommandBuilder()
   )
   .addStringOption((option) =>
     option.setName("notes").setDescription("Extra instructions for the release.").setRequired(false),
-  )
-.addStringOption(option =>
-      option.setName("link")
-        .setDescription("Private server link")
-        .setRequired(false)).addStringOption(option =>
-      option.setName("pt")
-        .setDescription("PT status")
-        .setRequired(false)
-        .addChoices(
-          { name: 'Strict', value: 'Strict' },
-          { name: 'On', value: 'On' },
-          { name: 'Off', value: 'Off' }
-        )).addStringOption(option =>
-      option.setName("frplimit")
-        .setDescription("FRP speed limit")
-        .setRequired(false)
-        .addChoices(
-          { name: '65MPH', value: '65MPH' },
-          { name: '75MPH', value: '75MPH' },
-          { name: '85MPH', value: '85MPH' }
-        ));
+  );
 
 export async function execute(interaction) {
   const description = buildMessage("The session has been released. Stay realistic, respect staff calls, and follow all server rules.", [

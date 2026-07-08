@@ -975,6 +975,37 @@ img {
   line-height: 1.5;
 }
 
+.embed-preview-thumb {
+  float: right;
+  width: 74px;
+  height: 74px;
+  margin: 0 0 12px 14px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.embed-preview-image {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  margin: 12px 0 14px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.embed-preview-footer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.embed-preview-footer img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .dashboard-actions {
   justify-content: flex-start;
 }

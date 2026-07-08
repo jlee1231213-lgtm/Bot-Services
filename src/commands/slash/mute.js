@@ -9,11 +9,7 @@ export const data = new SlashCommandBuilder()
   .addIntegerOption((option) =>
     option.setName("minutes").setDescription("Mute duration in minutes").setRequired(true).setMinValue(1).setMaxValue(40320),
   )
-  .addStringOption((option) => option.setName("reason").setDescription("Mute reason").setRequired(false))
-.addIntegerOption(option =>
-      option.setName('duration')
-        .setDescription('Duration in minutes')
-        .setRequired(false));
+  .addStringOption((option) => option.setName("reason").setDescription("Mute reason").setRequired(false));
 
 export async function execute(interaction) {
   const user = interaction.options.getUser("user", true);

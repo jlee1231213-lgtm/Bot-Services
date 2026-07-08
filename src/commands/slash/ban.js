@@ -7,11 +7,7 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
   .addUserOption((option) => option.setName("user").setDescription("Member to ban").setRequired(true))
   .addStringOption((option) => option.setName("reason").setDescription("Ban reason").setRequired(true))
-  .addStringOption((option) => option.setName("notes").setDescription("Extra staff notes").setRequired(false))
-.addStringOption(option =>
-      option.setName('proof')
-        .setDescription('Optional proof link')
-        .setRequired(false));
+  .addStringOption((option) => option.setName("notes").setDescription("Extra staff notes").setRequired(false));
 
 export async function execute(interaction) {
   const user = interaction.options.getUser("user", true);

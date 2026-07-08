@@ -332,6 +332,22 @@
                 </label>
               </div>
 
+              <div class="field-grid">
+                <label>
+                  Embed image URL
+                  <input id="embedImageInput" name="embedImage" type="url" placeholder="https://example.com/banner.png">
+                </label>
+                <label>
+                  Thumbnail URL
+                  <input id="embedThumbnailInput" name="embedThumbnail" type="url" placeholder="https://example.com/logo.png">
+                </label>
+              </div>
+
+              <label>
+                Footer icon URL
+                <input id="footerIconInput" name="footerIcon" type="url" placeholder="https://example.com/icon.png">
+              </label>
+
               <div class="toggle-list">
                 <label class="toggle-row">
                   <span>
@@ -389,16 +405,34 @@
                     <input name="commandFooter" type="text" value="Powered by Logic Systems">
                   </label>
                   <label>
-                    Cooldown minutes
-                    <input name="commandCooldown" type="number" value="10" min="0" max="999">
+                    Footer icon URL
+                    <input name="commandFooterIcon" type="url" placeholder="Optional footer icon URL">
                   </label>
                 </div>
 
                 <div class="field-grid">
                   <label>
+                    Embed image URL
+                    <input name="commandImage" type="url" placeholder="Optional image/banner URL">
+                  </label>
+                  <label>
+                    Thumbnail URL
+                    <input name="commandThumbnail" type="url" placeholder="Optional thumbnail URL">
+                  </label>
+                </div>
+
+                <div class="field-grid">
+                  <label>
+                    Cooldown minutes
+                    <input name="commandCooldown" type="number" value="10" min="0" max="999">
+                  </label>
+                  <label>
                     Ping role ID
                     <input name="commandPingRole" type="text" inputmode="numeric" placeholder="Optional role ID">
                   </label>
+                </div>
+
+                <div class="field-grid">
                   <label>
                     Output channel ID
                     <input name="commandChannel" type="text" inputmode="numeric" placeholder="Optional channel ID">
@@ -417,9 +451,11 @@
               <div class="embed-preview" aria-label="Embed preview">
                 <div class="embed-color-bar" id="previewColor"></div>
                 <div>
+                  <img class="embed-preview-thumb" id="previewThumbnail" alt="" hidden>
                   <h4 id="previewTitle">Session Startup</h4>
                   <p id="previewMessage">A new roleplay session is starting. Join up and follow the server rules.</p>
-                  <small id="previewFooter">Powered by Logic Systems</small>
+                  <img class="embed-preview-image" id="previewImage" alt="" hidden>
+                  <small class="embed-preview-footer"><img id="previewFooterIcon" alt="" hidden><span id="previewFooter">Powered by Logic Systems</span></small>
                 </div>
               </div>
 

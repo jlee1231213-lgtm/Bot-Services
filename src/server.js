@@ -642,6 +642,9 @@ const defaultSettings = {
   embedMessage: "A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.",
   embedColor: "#5865f2",
   footerText: "Logic Systems Custom",
+  footerIcon: "",
+  embedImage: "",
+  embedThumbnail: "",
   customEmbeds: true,
   commandTemplates: {
     startup: {
@@ -1167,6 +1170,9 @@ function sanitizeSettings(body) {
     embedMessage: cleanText(body.embedMessage, "A new roleplay session is starting.", 1000),
     embedColor: /^#[0-9a-f]{6}$/i.test(body.embedColor) ? body.embedColor : "#5865f2",
     footerText: cleanText(body.footerText, "Logic Systems Custom", 120),
+    footerIcon: cleanUrl(body.footerIcon),
+    embedImage: cleanUrl(body.embedImage),
+    embedThumbnail: cleanUrl(body.embedThumbnail),
     customEmbeds: Boolean(body.customEmbeds),
     commandTemplates: sanitizeCommandTemplates(body.commandTemplates),
   };
@@ -1233,6 +1239,9 @@ function sanitizeCommandTemplates(templates = {}) {
           message: cleanText(message, defaults.message, 1000),
           color: /^#[0-9a-f]{6}$/i.test(template.color) ? template.color : defaults.color,
           footer: cleanText(template.footer, defaults.footer, 120),
+          footerIcon: cleanUrl(template.footerIcon),
+          image: cleanUrl(template.image),
+          thumbnail: cleanUrl(template.thumbnail),
           pingRole: cleanText(template.pingRole, "", 80),
           channel: cleanText(template.channel, "", 80),
           cooldown: cleanText(template.cooldown, defaults.cooldown, 8),
@@ -1246,6 +1255,18 @@ function sanitizeCommandTemplates(templates = {}) {
 function cleanText(value, fallback, maxLength) {
   const text = String(value ?? "").trim();
   return (text || fallback).slice(0, maxLength);
+}
+
+function cleanUrl(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+
+  try {
+    const url = new URL(text);
+    return ["http:", "https:"].includes(url.protocol) ? url.toString().slice(0, 500) : "";
+  } catch {
+    return "";
+  }
 }
 
 async function requireSession(request, response) {

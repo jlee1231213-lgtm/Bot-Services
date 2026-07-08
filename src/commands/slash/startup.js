@@ -18,12 +18,7 @@ export const data = new SlashCommandBuilder()
   )
   .addStringOption((option) =>
     option.setName("notes").setDescription("Extra instructions for members joining.").setRequired(false),
-  )
-.addIntegerOption(option =>
-      option.setName('reactions')
-        .setDescription('Amount of reactions needed to start')
-        .setRequired(false)
-    );
+  );
 
 export async function execute(interaction) {
   const ping = cleanPing(interaction.options.getString("ping"));

@@ -7,11 +7,7 @@ export const data = new SlashCommandBuilder()
   .addUserOption((option) => option.setName("user").setDescription("User receiving the ticket").setRequired(true))
   .addStringOption((option) => option.setName("offense").setDescription("Offense/reason").setRequired(true))
   .addNumberOption((option) => option.setName("amount").setDescription("Fine amount").setRequired(false))
-  .addStringOption((option) => option.setName("notes").setDescription("Extra ticket notes").setRequired(false))
-.addNumberOption(option =>
-      option.setName('price')
-        .setDescription('Amount of the fine')
-        .setRequired(false));
+  .addStringOption((option) => option.setName("notes").setDescription("Extra ticket notes").setRequired(false));
 
 export async function execute(interaction) {
   const user = interaction.options.getUser("user", true);

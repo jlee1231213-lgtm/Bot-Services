@@ -8,7 +8,10 @@ const BACKEND_URL =
 const previewTitle = document.querySelector("#previewTitle");
 const previewMessage = document.querySelector("#previewMessage");
 const previewFooter = document.querySelector("#previewFooter");
+const previewFooterIcon = document.querySelector("#previewFooterIcon");
 const previewColor = document.querySelector("#previewColor");
+const previewImage = document.querySelector("#previewImage");
+const previewThumbnail = document.querySelector("#previewThumbnail");
 const supportCodeText = document.querySelector("#supportCodeText");
 const dashboardStatus = document.querySelector("#dashboardStatus");
 const selectedServerName = document.querySelector("#selectedServerName");
@@ -35,10 +38,16 @@ const titleInput = document.querySelector("#embedTitleInput");
 const messageInput = document.querySelector("#embedMessageInput");
 const colorInput = document.querySelector("#embedColorInput");
 const footerInput = document.querySelector("#footerTextInput");
+const embedImageInput = document.querySelector("#embedImageInput");
+const embedThumbnailInput = document.querySelector("#embedThumbnailInput");
+const footerIconInput = document.querySelector("#footerIconInput");
 const commandTitleInput = dashboardForm?.elements.commandTitle ?? null;
 const commandMessageInput = dashboardForm?.elements.commandMessage ?? null;
 const commandColorInput = dashboardForm?.elements.commandColor ?? null;
 const commandFooterInput = dashboardForm?.elements.commandFooter ?? null;
+const commandFooterIconInput = dashboardForm?.elements.commandFooterIcon ?? null;
+const commandImageInput = dashboardForm?.elements.commandImage ?? null;
+const commandThumbnailInput = dashboardForm?.elements.commandThumbnail ?? null;
 
 const commandCatalog = [
   { key: "announce", name: "ANNOUNCE", desc: "Post a custom server announcement." },
@@ -108,6 +117,29 @@ function setText(el, text) {
 
 function cloneData(value) {
   return JSON.parse(JSON.stringify(value ?? {}));
+}
+
+function cleanUrl(value) {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return "";
+
+  try {
+    const url = new URL(trimmed);
+    return ["http:", "https:"].includes(url.protocol) ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function setPreviewImage(image, url) {
+  if (!image) return;
+  const safeUrl = cleanUrl(url);
+  image.hidden = !safeUrl;
+  if (safeUrl) {
+    image.src = safeUrl;
+  } else {
+    image.removeAttribute("src");
+  }
 }
 
 function setInviteLinks() {
@@ -245,13 +277,16 @@ function getCurrentSettings() {
   return guildSettings?.settings ?? guildSettings ?? null;
 }
 
-function applyPreviewContent({ title, message, footer, color }) {
+function applyPreviewContent({ title, message, footer, color, image, thumbnail, footerIcon }) {
   setText(previewTitle, title || "Session Startup");
   setText(previewMessage, message || "A new roleplay session is starting. Join up and follow the server rules.");
   setText(previewFooter, footer || "Powered by Logic Systems");
   if (previewColor) {
     previewColor.style.background = color || "#5865f2";
   }
+  setPreviewImage(previewImage, image);
+  setPreviewImage(previewThumbnail, thumbnail);
+  setPreviewImage(previewFooterIcon, footerIcon);
 }
 
 function setEmbedPreviewFromInputs() {
@@ -260,6 +295,9 @@ function setEmbedPreviewFromInputs() {
     message: messageInput?.value,
     footer: footerInput?.value,
     color: colorInput?.value,
+    image: embedImageInput?.value,
+    thumbnail: embedThumbnailInput?.value,
+    footerIcon: footerIconInput?.value,
   });
 }
 
@@ -269,6 +307,9 @@ function setCommandPreviewFromInputs() {
     message: commandMessageInput?.value,
     footer: commandFooterInput?.value,
     color: commandColorInput?.value,
+    image: commandImageInput?.value,
+    thumbnail: commandThumbnailInput?.value,
+    footerIcon: commandFooterIconInput?.value,
   });
 }
 
@@ -310,6 +351,9 @@ function applySettingsToForm(settings) {
   dashboardForm.elements.embedMessage.value = settings.embedMessage || "";
   dashboardForm.elements.embedColor.value = settings.embedColor || "#5865f2";
   dashboardForm.elements.footerText.value = settings.footerText || "Powered by Logic Systems";
+  dashboardForm.elements.embedImage.value = settings.embedImage || "";
+  dashboardForm.elements.embedThumbnail.value = settings.embedThumbnail || "";
+  dashboardForm.elements.footerIcon.value = settings.footerIcon || "";
   dashboardForm.elements.customEmbeds.checked = Boolean(settings.customEmbeds);
   dashboardForm.elements.embedBuilder.checked = Boolean(settings.embedBuilder);
   dashboardForm.elements.antiRaid.checked = Boolean(settings.antiRaid);
@@ -334,6 +378,9 @@ function getDefaultCommandTemplate(commandKey) {
     color: "#5865f2",
     message: command?.desc || "Command response template.",
     footer: "Powered by Logic Systems",
+    footerIcon: "",
+    image: "",
+    thumbnail: "",
     cooldown: "0",
     pingRole: "",
     channel: "",
@@ -359,6 +406,9 @@ function readCommandTemplateFromForm(commandKey = activeCommandKey) {
     color: dashboardForm.elements.commandColor.value || fallback.color,
     message: dashboardForm.elements.commandMessage.value.trim() || fallback.message,
     footer: dashboardForm.elements.commandFooter.value.trim() || fallback.footer,
+    footerIcon: cleanUrl(dashboardForm.elements.commandFooterIcon.value),
+    image: cleanUrl(dashboardForm.elements.commandImage.value),
+    thumbnail: cleanUrl(dashboardForm.elements.commandThumbnail.value),
     cooldown: String(dashboardForm.elements.commandCooldown.value || fallback.cooldown),
     pingRole: dashboardForm.elements.commandPingRole.value.trim(),
     channel: dashboardForm.elements.commandChannel.value.trim(),
@@ -394,6 +444,9 @@ function applyCommandTemplate(commandKey) {
   dashboardForm.elements.commandColor.value = template.color || "#5865f2";
   dashboardForm.elements.commandMessage.value = template.message || "";
   dashboardForm.elements.commandFooter.value = template.footer || "";
+  dashboardForm.elements.commandFooterIcon.value = template.footerIcon || "";
+  dashboardForm.elements.commandImage.value = template.image || "";
+  dashboardForm.elements.commandThumbnail.value = template.thumbnail || "";
   dashboardForm.elements.commandCooldown.value = template.cooldown || "0";
   dashboardForm.elements.commandPingRole.value = template.pingRole || "";
   dashboardForm.elements.commandChannel.value = template.channel || "";
@@ -591,6 +644,9 @@ function buildSettingsPayload() {
     embedMessage: dashboardForm.elements.embedMessage.value.trim(),
     embedColor: dashboardForm.elements.embedColor.value,
     footerText: dashboardForm.elements.footerText.value.trim(),
+    embedImage: cleanUrl(dashboardForm.elements.embedImage.value),
+    embedThumbnail: cleanUrl(dashboardForm.elements.embedThumbnail.value),
+    footerIcon: cleanUrl(dashboardForm.elements.footerIcon.value),
     customEmbeds: dashboardForm.elements.customEmbeds.checked,
     embedBuilder: dashboardForm.elements.embedBuilder.checked,
     antiRaid: dashboardForm.elements.antiRaid.checked,
@@ -744,14 +800,14 @@ async function saveOwnerSupport() {
 }
 
 function attachLivePreview() {
-  [titleInput, messageInput, colorInput, footerInput].forEach((input) => {
+  [titleInput, messageInput, colorInput, footerInput, embedImageInput, embedThumbnailInput, footerIconInput].forEach((input) => {
     input?.addEventListener("input", () => {
       previewMode = "embed";
       refreshPreview();
     });
   });
 
-  [commandTitleInput, commandMessageInput, commandColorInput, commandFooterInput].forEach((input) => {
+  [commandTitleInput, commandMessageInput, commandColorInput, commandFooterInput, commandFooterIconInput, commandImageInput, commandThumbnailInput].forEach((input) => {
     input?.addEventListener("input", () => {
       previewMode = "command";
       refreshPreview();

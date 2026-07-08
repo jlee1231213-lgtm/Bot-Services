@@ -24,14 +24,28 @@ export async function standardEmbed(guildId, title, description) {
   const embedTitle = useTemplate ? template.title : settings?.customEmbeds ? settings.embedTitle : title;
   const embedDescription = buildTemplateDescription(useTemplate ? template.message : settings?.customEmbeds ? settings.embedMessage : description, description);
   const embedFooter = useTemplate ? template.footer : settings?.footerText;
+  const embedFooterIcon = useTemplate ? template.footerIcon : settings?.footerIcon;
   const embedColor = useTemplate ? template.color : settings?.embedColor;
+  const embedImage = useTemplate ? template.image : settings?.embedImage;
+  const embedThumbnail = useTemplate ? template.thumbnail : settings?.embedThumbnail;
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(parseHexColor(embedColor) ?? brandColor)
     .setTitle(embedTitle ?? title)
     .setDescription(embedDescription)
-    .setFooter({ text: embedFooter ?? "Powered by Logic Systems" })
     .setTimestamp();
+
+  embed.setFooter({
+    text: embedFooter ?? "Powered by Logic Systems",
+    iconURL: cleanUrl(embedFooterIcon) || undefined,
+  });
+
+  const imageUrl = cleanUrl(embedImage);
+  const thumbnailUrl = cleanUrl(embedThumbnail);
+  if (imageUrl) embed.setImage(imageUrl);
+  if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
+
+  return embed;
 }
 
 function getCommandTemplate(settings, title) {
@@ -66,9 +80,9 @@ const commandTemplateKeys = {
   "Staff Announcement": "staff",
   "Support Ticket": "ticket",
   "Cohost Added": "cohost",
-  "Cohost Ended": "cohostEnd",
+  "Cohost Ended": "cohost-end",
   "Roleplay Rules": "rules",
-  "Join Voice Chat": "joinVc",
+  "Join Voice Chat": "join-vc",
   "Ping Reminder": "hatepings",
   "Staff Quota Update": "quota",
   "Supervision Notice": "supervise",
@@ -82,15 +96,15 @@ const commandTemplateKeys = {
   "Warrant Posted": "warrant",
   "Ticket Paid": "payticket",
   "Roleplay Profile": "profile",
-  "Staff Profile": "staffProfile",
+  "Staff Profile": "staff-profile",
   "Wallet Balance": "balance",
   "Work Shift Receipt": "work",
   "Deposit Receipt": "deposit",
   "Withdrawal Receipt": "withdraw",
-  "Money Transfer": "giveMoney",
+  "Money Transfer": "give-money",
   "Member Count": "membercount",
-  "Startup Cooldown Reset": "resetStartupCooldown",
-  "Over Cooldown Reset": "resetOverCooldown",
+  "Startup Cooldown Reset": "reset-startup-cooldown",
+  "Over Cooldown Reset": "reset-over-cooldown",
 };
 
 export function parseHexColor(value) {
@@ -98,4 +112,16 @@ export function parseHexColor(value) {
   const normalized = value.trim().replace("#", "");
   if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
   return Number.parseInt(normalized, 16);
+}
+
+function cleanUrl(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+
+  try {
+    const url = new URL(text);
+    return ["http:", "https:"].includes(url.protocol) ? url.toString() : "";
+  } catch {
+    return "";
+  }
 }

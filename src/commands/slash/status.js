@@ -2,20 +2,7 @@ import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 
 export const data = new SlashCommandBuilder()
   .setName("status")
-  .setDescription("Check the bot and free service status for this server.")
-.addStringOption(option =>
-            option.setName('activity')
-                .setDescription('The activity type')
-                .setRequired(false)
-                .addChoices(
-                    { name: 'Playing', value: 'PLAYING' },
-                    { name: 'Watching', value: 'WATCHING' },
-                    { name: 'Listening', value: 'LISTENING' },
-                    { name: 'Competing', value: 'COMPETING' },
-                )).addStringOption(option =>
-            option.setName('message')
-                .setDescription('The status message to display')
-                .setRequired(false));
+  .setDescription("Check the bot and free service status for this server.");
 
 export async function execute(interaction) {
   await interaction.reply({
