@@ -1,6 +1,5 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import { getGuildSettings } from "../../store.js";
-import { brandColor, parseHexColor } from "./_shared.js";
+import { SlashCommandBuilder } from "discord.js";
+import { customEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("announce")
@@ -16,18 +15,11 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction) {
-  const settings = await getGuildSettings(interaction.guildId);
   const title = interaction.options.getString("title", true);
   const message = interaction.options.getString("message", true);
-  const footer = interaction.options.getString("footer") ?? settings?.footerText ?? "Logic Systems Free";
+  const footer = interaction.options.getString("footer");
 
   await interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(parseHexColor(settings?.embedColor) ?? brandColor)
-        .setTitle(title)
-        .setDescription(message)
-        .setFooter({ text: footer }),
-    ],
+    embeds: [await customEmbed(interaction.guildId, { title, description: message, footer })],
   });
 }

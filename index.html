@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap"
       rel="stylesheet"
     >
-    <link rel="stylesheet" href="styles.css?v=better-logic-3">
+    <link rel="stylesheet" href="styles.css?v=better-logic-4">
   </head>
   <body>
     <div class="page-shell">
@@ -277,9 +277,12 @@
                   <p class="eyebrow">Selected bot</p>
                   <h3 id="selectedServerName">No server selected</h3>
                 </div>
-                <div class="plan-toggle" role="group" aria-label="Mode selector">
-                  <button class="active" type="button" data-plan="free">Standard</button>
-                  <button type="button" data-plan="premium">Custom</button>
+                <div class="dashboard-head-actions">
+                  <button class="btn primary dashboard-save-top" id="dashboardSaveTop" type="button">Save Custom Bot</button>
+                  <div class="plan-toggle" role="group" aria-label="Mode selector">
+                    <button class="active" type="button" data-plan="free">Standard</button>
+                    <button type="button" data-plan="premium">Custom</button>
+                  </div>
                 </div>
               </div>
 
@@ -378,10 +381,23 @@
                     <p class="eyebrow">Command Templates</p>
                     <h4>Editable command defaults</h4>
                   </div>
-                  <span>Saved per Discord server</span>
+                  <span id="commandCount">51 commands</span>
                 </div>
 
+                <label class="command-search">
+                  Search commands
+                  <input id="commandSearchInput" type="search" placeholder="Search all commands, like startup, ticket, or moderation">
+                </label>
+
                 <div class="command-template-grid" id="commandTemplateList" aria-label="Command template selector"></div>
+
+                <div class="command-editor-heading">
+                  <div>
+                    <p class="eyebrow">Editing</p>
+                    <h5 id="activeCommandName">/startup</h5>
+                  </div>
+                  <button class="btn primary" id="saveCommandButton" type="button">Save This Command</button>
+                </div>
 
                 <div class="field-grid">
                   <label>
@@ -399,33 +415,42 @@
                   <textarea name="commandMessage" rows="4">A new roleplay session is starting. Join up, follow staff directions, and keep scenes realistic.</textarea>
                 </label>
 
-                <div class="field-grid">
+                <div class="command-image-panel">
+                  <div>
+                    <p class="eyebrow">Embed Picture Placement</p>
+                    <h5>Choose where each picture appears</h5>
+                  </div>
+                  <div class="image-placement-grid">
+                    <label>
+                      <span>Large banner</span>
+                      <small>Full-width picture under the message</small>
+                      <input name="commandImage" type="url" placeholder="https://example.com/banner.png">
+                    </label>
+                    <label>
+                      <span>Top-right thumbnail</span>
+                      <small>Small square picture beside the title</small>
+                      <input name="commandThumbnail" type="url" placeholder="https://example.com/logo.png">
+                    </label>
+                    <label>
+                      <span>Footer icon</span>
+                      <small>Small round picture beside the footer</small>
+                      <input name="commandFooterIcon" type="url" placeholder="https://example.com/icon.png">
+                    </label>
+                  </div>
+                </div>
+
+                <div class="field-grid command-footer-row">
                   <label>
                     Footer text
                     <input name="commandFooter" type="text" value="Powered by Logic Systems">
                   </label>
                   <label>
-                    Footer icon URL
-                    <input name="commandFooterIcon" type="url" placeholder="Optional footer icon URL">
-                  </label>
-                </div>
-
-                <div class="field-grid">
-                  <label>
-                    Embed image URL
-                    <input name="commandImage" type="url" placeholder="Optional image/banner URL">
-                  </label>
-                  <label>
-                    Thumbnail URL
-                    <input name="commandThumbnail" type="url" placeholder="Optional thumbnail URL">
-                  </label>
-                </div>
-
-                <div class="field-grid">
-                  <label>
                     Cooldown minutes
                     <input name="commandCooldown" type="number" value="10" min="0" max="999">
                   </label>
+                </div>
+
+                <div class="field-grid">
                   <label>
                     Ping role ID
                     <input name="commandPingRole" type="text" inputmode="numeric" placeholder="Optional role ID">
@@ -446,6 +471,11 @@
                   </span>
                   <input name="commandEnabled" type="checkbox" checked>
                 </label>
+
+                <div class="command-save-row">
+                  <button class="btn primary" id="saveCommandBottomButton" type="button">Save This Command</button>
+                  <span id="commandSaveStatus">Changes are saved to the selected Discord server.</span>
+                </div>
               </div>
 
               <div class="embed-preview" aria-label="Embed preview">
@@ -460,7 +490,7 @@
               </div>
 
               <div class="dashboard-actions">
-                <button class="btn primary" type="submit">Save Changes</button>
+                <button class="btn primary" type="submit">Save Custom Bot</button>
                 <a class="btn secondary" href="#request" id="upgradeButton">Request Custom Setup</a>
               </div>
 
@@ -517,6 +547,6 @@
       </main>
     </div>
 
-    <script src="script.js?v=better-logic-4"></script>
+    <script src="script.js?v=better-logic-6"></script>
   </body>
 </html>

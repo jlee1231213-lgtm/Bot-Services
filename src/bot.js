@@ -1,7 +1,19 @@
-import { ChannelType, Client, GatewayIntentBits, MessageFlags, PermissionFlagsBits } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChannelType,
+  Client,
+  EmbedBuilder,
+  GatewayIntentBits,
+  MessageFlags,
+  PermissionFlagsBits,
+} from "discord.js";
 import { slashCommandMap } from "./commands/slash/index.js";
 
 const ticketButtonId = "logic_systems_open_ticket";
+const closeTicketButtonId = "logic_systems_close_ticket";
+const brandColor = 0x5865f2;
 const staffRoleNames = ["Logic Owner", "Logic Director", "Build Lead", "Senior Support", "Support Specialist", "Trial Support"];
 
 export function createBot() {
@@ -16,6 +28,11 @@ export function createBot() {
   client.on("interactionCreate", async (interaction) => {
     if (interaction.isButton() && interaction.customId === ticketButtonId) {
       await handleTicketButton(interaction);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId === closeTicketButtonId) {
+      await handleCloseTicketButton(interaction);
       return;
     }
 
@@ -97,10 +114,54 @@ async function handleTicketButton(interaction) {
   });
 
   await channel.send({
-    content: `${interaction.user} welcome to your Logic Systems support ticket.\n\nPlease send your server name, bot name, what you need help with, and screenshots/errors if something is broken. Never send your Discord password or bot token.`,
+    content: `${interaction.user}`,
+    embeds: [
+      new EmbedBuilder()
+        .setColor(brandColor)
+        .setTitle("Logic Systems Support Ticket")
+        .setDescription(
+          "Tell us what you need help with and a support team member will reply here. Please include enough detail for us to reproduce the problem.",
+        )
+        .addFields(
+          { name: "Include", value: "Your server name, bot name, command or dashboard page, and the result you expected." },
+          { name: "If something broke", value: "Send the full error and a screenshot when possible." },
+          { name: "Keep your account safe", value: "Never send your Discord password, bot token, or private login information." },
+        )
+        .setFooter({ text: "Powered by Logic Systems • Owned by Pnkstrz_._" })
+        .setTimestamp(),
+    ],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(closeTicketButtonId)
+          .setLabel("Close Ticket")
+          .setStyle(ButtonStyle.Danger),
+      ),
+    ],
   });
 
   await interaction.reply({ content: `Ticket opened: ${channel}`, flags: MessageFlags.Ephemeral });
+}
+
+async function handleCloseTicketButton(interaction) {
+  if (!interaction.inGuild() || interaction.channel?.type !== ChannelType.GuildText) {
+    await interaction.reply({ content: "This button only works inside a support ticket.", flags: MessageFlags.Ephemeral });
+    return;
+  }
+
+  const ownerId = interaction.channel.topic?.match(/Ticket owner: (\d+)/)?.[1];
+  const canClose = ownerId === interaction.user.id || interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels);
+  if (!ownerId || !canClose) {
+    await interaction.reply({ content: "Only the ticket owner or support staff can close this ticket.", flags: MessageFlags.Ephemeral });
+    return;
+  }
+
+  await interaction.reply({ content: "Ticket closed. This channel will be deleted in 5 seconds." });
+  setTimeout(() => {
+    interaction.channel.delete(`Logic Systems ticket closed by ${interaction.user.tag}`).catch((error) => {
+      console.error("Could not delete closed ticket channel", error);
+    });
+  }, 5_000);
 }
 
 async function sendCommandError(interaction) {

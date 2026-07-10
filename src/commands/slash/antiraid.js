@@ -1,4 +1,5 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
+import { standardEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("antiraid")
@@ -6,13 +7,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   await interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(0x76f0d2)
-        .setTitle("Anti-Raid Protection")
-        .setDescription("Free anti-raid status tools are enabled for this server.")
-        .setFooter({ text: "Logic Systems Free" }),
-    ],
+    embeds: [await standardEmbed(interaction.guildId, "Anti-Raid Status", "Free anti-raid status tools are enabled for this server.")],
     ephemeral: true,
   });
 }

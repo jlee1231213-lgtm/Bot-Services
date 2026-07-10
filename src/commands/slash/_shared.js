@@ -48,6 +48,26 @@ export async function standardEmbed(guildId, title, description) {
   return embed;
 }
 
+export async function customEmbed(guildId, { title, description, color, footer, image, thumbnail, footerIcon }) {
+  const settings = await getGuildSettings(guildId);
+  const embed = new EmbedBuilder()
+    .setColor(parseHexColor(color || settings?.embedColor) ?? brandColor)
+    .setTitle(title)
+    .setDescription(description)
+    .setFooter({
+      text: footer || settings?.footerText || "Powered by Logic Systems",
+      iconURL: cleanUrl(footerIcon || settings?.footerIcon) || undefined,
+    })
+    .setTimestamp();
+
+  const imageUrl = cleanUrl(image || settings?.embedImage);
+  const thumbnailUrl = cleanUrl(thumbnail || settings?.embedThumbnail);
+  if (imageUrl) embed.setImage(imageUrl);
+  if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
+
+  return embed;
+}
+
 function getCommandTemplate(settings, title) {
   const key = commandTemplateKeys[title] ?? commandTemplateKeys[title?.replace(/^Scene:.+$/i, "Scene Update")];
   return key ? settings?.commandTemplates?.[key] : null;

@@ -1,5 +1,5 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import { brandColor, parseHexColor } from "./_shared.js";
+import { SlashCommandBuilder } from "discord.js";
+import { customEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("embed")
@@ -20,10 +20,10 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const title = interaction.options.getString("title", true);
   const message = interaction.options.getString("message", true);
-  const footer = interaction.options.getString("footer") ?? "Logic Systems Free";
-  const color = parseHexColor(interaction.options.getString("color")) ?? brandColor;
+  const footer = interaction.options.getString("footer");
+  const color = interaction.options.getString("color");
 
   await interaction.reply({
-    embeds: [new EmbedBuilder().setColor(color).setTitle(title).setDescription(message).setFooter({ text: footer })],
+    embeds: [await customEmbed(interaction.guildId, { title, description: message, footer, color })],
   });
 }

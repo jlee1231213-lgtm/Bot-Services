@@ -916,7 +916,21 @@ img {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 6px;
+  max-height: 560px;
+  margin-bottom: 24px;
+  padding: 4px 10px 4px 4px;
+  overflow-y: auto;
+  scrollbar-color: rgba(91, 140, 255, 0.75) rgba(255, 255, 255, 0.05);
+}
+
+.command-search {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.command-search input {
+  width: 100%;
 }
 
 .command-card {
@@ -952,6 +966,82 @@ img {
   color: #fff;
   background: rgba(255, 255, 255, 0.04);
   font-weight: 700;
+}
+
+.command-editor-heading,
+.command-save-row,
+.dashboard-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.command-editor-heading {
+  position: sticky;
+  top: 12px;
+  z-index: 4;
+  margin: 4px 0 20px;
+  padding: 14px;
+  border: 1px solid rgba(91, 140, 255, 0.22);
+  border-radius: 18px;
+  background: rgba(7, 16, 30, 0.95);
+  backdrop-filter: blur(14px);
+}
+
+.command-editor-heading h5,
+.command-image-panel h5 {
+  margin: 3px 0 0;
+  font-size: 1.15rem;
+}
+
+.command-image-panel {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid rgba(91, 140, 255, 0.2);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(91, 140, 255, 0.1), rgba(124, 240, 207, 0.04));
+}
+
+.image-placement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.image-placement-grid label {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  background: rgba(4, 12, 24, 0.55);
+}
+
+.image-placement-grid span {
+  font-weight: 800;
+}
+
+.image-placement-grid small,
+.command-save-row span {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.command-save-row {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-save-top {
+  white-space: nowrap;
+}
+
+.dashboard-panel.is-empty .dashboard-save-top {
+  display: none;
 }
 
 .command-enabled {
@@ -1129,9 +1219,16 @@ img {
   .dashboard-head,
   .dashboard-actions,
   .support-code-panel,
-  .subsection-head {
+  .subsection-head,
+  .command-editor-heading,
+  .command-save-row,
+  .dashboard-head-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .image-placement-grid {
+    grid-template-columns: 1fr;
   }
 
   .tool-card.featured {

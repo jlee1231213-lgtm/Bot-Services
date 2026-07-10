@@ -23,6 +23,8 @@ const DISCORD_OAUTH_RATE_LIMIT_FALLBACK_MS = 5 * 60 * 1000;
 let botGuildIdsCache = {
   ids: new Set(),
   expiresAt: 0,
+  initialized: false,
+  error: null,
 };
 let botGuildIdsPromise = null;
 let discordOAuthCooldownUntil = 0;
@@ -391,15 +393,13 @@ export function createServer() {
 
     try {
       const tokenData = await exchangeDiscordCode(code, getRequestBackendUrl(request, backendUrl));
-      const [user, guilds, botGuildIds] = await Promise.all([
+      const [user, guilds] = await Promise.all([
         discordApi("/users/@me", tokenData.access_token),
         discordApi("/users/@me/guilds", tokenData.access_token),
-        getBotGuildIds(),
       ]);
 
       const manageableGuilds = guilds
         .filter(canManageGuild)
-        .filter((guild) => botGuildIds.has(guild.id))
         .map((guild) => ({
           id: guild.id,
           name: guild.name,
@@ -461,27 +461,32 @@ export function createServer() {
     const session = await requireSession(request, response);
     if (!session) return;
 
-    const supportCode = `LS-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
-
     response.json({
       user: session.user,
-      supportCode,
     });
   });
   app.get("/api/guilds", async (request, response) => {
     const session = await requireSession(request, response);
     if (!session) return;
 
-    const botGuildIds = await getBotGuildIds();
-    const guilds = await Promise.all(
-      session.guilds
-        .filter((guild) => botGuildIds.has(guild.id))
-        .map(async (guild) => ({
-          ...guild,
-          premium: await isPremiumGuild(guild.id),
-        })),
-    );
-    response.json({ guilds });
+    try {
+      const botGuildIds = await getBotGuildIds();
+      const guilds = await Promise.all(
+        session.guilds
+          .filter((guild) => botGuildIds.has(guild.id))
+          .map(async (guild) => ({
+            ...guild,
+            premium: await isPremiumGuild(guild.id),
+          })),
+      );
+      response.json({ guilds });
+    } catch (error) {
+      console.warn("Could not load dashboard server membership", error.message);
+      response.status(503).json({
+        error: "Discord is temporarily limiting server checks. Please wait a moment and retry.",
+        retryAfter: Math.ceil((error.retryMs ?? BOT_GUILDS_RATE_LIMIT_CACHE_MS) / 1000),
+      });
+    }
   });
 
   app.get("/api/guilds/:guildId/settings", async (request, response) => {
@@ -1465,6 +1470,9 @@ async function botDiscordApi(path) {
 async function getBotGuildIds() {
   const now = Date.now();
   if (botGuildIdsCache.expiresAt > now) {
+    if (!botGuildIdsCache.initialized && botGuildIdsCache.error) {
+      throw botGuildIdsCache.error;
+    }
     return botGuildIdsCache.ids;
   }
 
@@ -1484,6 +1492,8 @@ async function refreshBotGuildIds() {
     botGuildIdsCache = {
       ids,
       expiresAt: Date.now() + BOT_GUILDS_CACHE_MS,
+      initialized: true,
+      error: null,
     };
     return ids;
   } catch (error) {
@@ -1492,8 +1502,14 @@ async function refreshBotGuildIds() {
       Number.isFinite(error.retryAfter) && error.retryAfter > 0 ? error.retryAfter * 1000 : 0,
     );
 
-    botGuildIdsCache.expiresAt = Date.now() + retryMs;
+    error.retryMs = retryMs;
+    botGuildIdsCache = {
+      ...botGuildIdsCache,
+      expiresAt: Date.now() + retryMs,
+      error,
+    };
     console.warn("Could not refresh Discord bot guild cache", error.message);
+    if (!botGuildIdsCache.initialized) throw error;
     return botGuildIdsCache.ids;
   }
 }

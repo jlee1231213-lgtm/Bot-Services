@@ -1,5 +1,5 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import { brandColor, cleanPing } from "./_shared.js";
+import { SlashCommandBuilder } from "discord.js";
+import { cleanPing, standardEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("vote")
@@ -26,14 +26,7 @@ export async function execute(interaction) {
 
   const message = await interaction.reply({
     content: ping ?? undefined,
-    embeds: [
-      new EmbedBuilder()
-        .setColor(brandColor)
-        .setTitle("Session Vote")
-        .setDescription(`${question}${options}`)
-        .setFooter({ text: "Vote below" })
-        .setTimestamp(),
-    ],
+    embeds: [await standardEmbed(interaction.guildId, "Vote", `${question}${options}`)],
     fetchReply: true,
   });
 

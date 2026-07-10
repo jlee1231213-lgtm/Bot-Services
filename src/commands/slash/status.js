@@ -1,4 +1,5 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
+import { standardEmbed } from "./_shared.js";
 
 export const data = new SlashCommandBuilder()
   .setName("status")
@@ -6,13 +7,11 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   await interaction.reply({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(0x76f0d2)
-        .setTitle("Logic Systems Status")
-        .setDescription("Service is online.\nPackage: Free Custom Bot\nCustom embeds: Available\nRoleplay tools: Available")
-        .setFooter({ text: "Logic Systems Free" }),
-    ],
+    embeds: [await standardEmbed(
+      interaction.guildId,
+      "Server Status",
+      "Service is online.\nPackage: Free Custom Bot\nCustom embeds: Available\nRoleplay tools: Available",
+    )],
     ephemeral: true,
   });
 }

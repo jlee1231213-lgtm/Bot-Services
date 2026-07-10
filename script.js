@@ -28,6 +28,13 @@ const ownerSupportStatus = document.querySelector("#ownerSupportStatus");
 const planNotice = document.querySelector("#planNotice");
 const dashboardSignInButton = document.querySelector("#dashboardSignInButton");
 const dashboardSignInWrap = document.querySelector("#dashboardSignInWrap");
+const commandSearchInput = document.querySelector("#commandSearchInput");
+const commandCount = document.querySelector("#commandCount");
+const activeCommandName = document.querySelector("#activeCommandName");
+const commandSaveStatus = document.querySelector("#commandSaveStatus");
+const saveCommandButton = document.querySelector("#saveCommandButton");
+const saveCommandBottomButton = document.querySelector("#saveCommandBottomButton");
+const dashboardSaveTop = document.querySelector("#dashboardSaveTop");
 const inviteTargets = [
   document.querySelector("#inviteButton"),
   document.querySelector("#inviteButtonHero"),
@@ -432,6 +439,7 @@ function applyCommandTemplate(commandKey) {
   }
 
   activeCommandKey = commandKey;
+  setText(activeCommandName, `/${commandKey}`);
   document.querySelectorAll(".command-card").forEach((card) => {
     card.classList.toggle("active", card.dataset.command === commandKey);
   });
@@ -462,7 +470,18 @@ function renderCommandCards() {
   const settings = getCurrentSettings();
   if (settings) ensureCommandTemplates(settings);
 
-  commandCatalog.forEach((cmd) => {
+  const query = String(commandSearchInput?.value ?? "").trim().toLowerCase();
+  const visibleCommands = commandCatalog.filter((cmd) => {
+    if (!query) return true;
+    const template = settings?.commandTemplates?.[cmd.key];
+    return [cmd.key, cmd.name, cmd.desc, template?.title]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(query));
+  });
+
+  setText(commandCount, query ? `${visibleCommands.length} of ${commandCatalog.length} commands` : `${commandCatalog.length} commands`);
+
+  visibleCommands.forEach((cmd) => {
     const template = settings?.commandTemplates?.[cmd.key];
     const card = document.createElement("div");
     card.className = "command-card";
@@ -481,6 +500,10 @@ function renderCommandCards() {
 
     commandTemplateList.appendChild(card);
   });
+
+  if (!visibleCommands.length) {
+    commandTemplateList.innerHTML = '<p class="server-empty command-empty">No commands match that search.</p>';
+  }
 
   applyCommandTemplate(activeCommandKey);
 }
@@ -543,7 +566,7 @@ async function loadUser() {
     user = data.user ?? null;
     setDashboardAuthState(true);
     setDashboardServerState(false);
-    setText(supportCodeText, data.supportCode || "N/A");
+    setText(supportCodeText, "Select a server");
     setDashboardStatus(`Signed in as ${user?.username ?? "Discord user"}`);
 
     await loadGuilds();
@@ -564,7 +587,12 @@ async function loadGuilds() {
     });
 
     if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      guilds = [];
+      setDashboardServerState(false);
+      setDashboardRetrySignIn(false);
       renderGuildList([]);
+      setDashboardStatus(data.error || "Could not load your Discord servers right now.");
       return;
     }
 
@@ -608,7 +636,9 @@ async function loadGuildSettings(guildId) {
     });
 
     if (!res.ok) {
-      setDashboardStatus("Could not load settings for this server.");
+      const data = await res.json().catch(() => ({}));
+      setDashboardServerState(false);
+      setDashboardStatus(data.error || "Could not load settings for this server.");
       return;
     }
 
@@ -655,9 +685,14 @@ function buildSettingsPayload() {
 }
 
 async function saveGuildSettings() {
-  if (!selectedGuildId || !dashboardForm) return;
+  if (!selectedGuildId || !dashboardForm) {
+    setDashboardStatus("Select a Discord server before saving.");
+    return false;
+  }
 
   const payload = buildSettingsPayload();
+  setSaveButtonsBusy(true);
+  setDashboardStatus("Saving your custom bot...");
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/guilds/${selectedGuildId}/settings`, {
@@ -671,8 +706,9 @@ async function saveGuildSettings() {
     });
 
     if (!res.ok) {
-      setDashboardStatus("Save failed. Please try again.");
-      return;
+      const data = await res.json().catch(() => ({}));
+      setDashboardStatus(data.error || "Save failed. Please try again.");
+      return false;
     }
 
     const data = await res.json();
@@ -684,10 +720,38 @@ async function saveGuildSettings() {
     setDashboardStatus("Changes saved successfully.");
     renderCommandCards();
     applySettingsToForm(getCurrentSettings());
+    return true;
   } catch (error) {
     console.error("Failed to save settings", error);
     setDashboardStatus("Save failed. Please try again.");
+    return false;
+  } finally {
+    setSaveButtonsBusy(false);
   }
+}
+
+function setSaveButtonsBusy(isBusy) {
+  [saveCommandButton, saveCommandBottomButton, dashboardSaveTop].forEach((button) => {
+    if (!button) return;
+    button.disabled = isBusy;
+    button.textContent = isBusy
+      ? "Saving..."
+      : button === dashboardSaveTop
+        ? "Save Custom Bot"
+        : "Save This Command";
+  });
+}
+
+async function saveFromCommandEditor() {
+  saveActiveCommandTemplateDraft();
+  setText(commandSaveStatus, `Saving /${activeCommandKey}...`);
+  const saved = await saveGuildSettings();
+  setText(
+    commandSaveStatus,
+    saved
+      ? `/${activeCommandKey} and your custom bot settings were saved.`
+      : "Could not save. Check the message at the top of the dashboard.",
+  );
 }
 
 async function submitBotRequest(event) {
@@ -844,6 +908,10 @@ function init() {
   requestForm?.addEventListener("submit", submitBotRequest);
   ownerOpenButton?.addEventListener("click", openOwnerSupport);
   ownerSaveButton?.addEventListener("click", saveOwnerSupport);
+  commandSearchInput?.addEventListener("input", renderCommandCards);
+  saveCommandButton?.addEventListener("click", saveFromCommandEditor);
+  saveCommandBottomButton?.addEventListener("click", saveFromCommandEditor);
+  dashboardSaveTop?.addEventListener("click", saveGuildSettings);
 
   loadUser();
 }
