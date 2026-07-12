@@ -1,4 +1,5 @@
 import { EmbedBuilder } from "discord.js";
+import crypto from "node:crypto";
 import { getGuildSettings } from "../../store.js";
 
 export const brandColor = 0x5865f2;
@@ -80,8 +81,12 @@ async function getEffectiveGuildSettings(guildId) {
   if (cached?.expiresAt > Date.now()) return cached.settings;
 
   try {
+    const signature = crypto
+      .createHmac("sha256", token)
+      .update(`guild-settings:${guildId}`)
+      .digest("hex");
     const response = await fetch(`${backendUrl}/api/bot/guilds/${encodeURIComponent(guildId)}/settings`, {
-      headers: { Authorization: `Bot ${token}` },
+      headers: { "x-bot-signature": signature },
       signal: AbortSignal.timeout(5_000),
     });
     if (!response.ok) {

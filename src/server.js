@@ -490,14 +490,14 @@ export function createServer() {
   });
 
   app.get("/api/bot/guilds/:guildId/settings", async (request, response) => {
-    if (!isBotRequest(request)) {
-      response.status(401).json({ error: "Bot authentication required." });
-      return;
-    }
-
     const guildId = cleanText(request.params.guildId, "", 30);
     if (!/^\d{17,20}$/.test(guildId)) {
       response.status(400).json({ error: "Invalid Discord server ID." });
+      return;
+    }
+
+    if (!isBotRequest(request, guildId)) {
+      response.status(401).json({ error: "Bot authentication required." });
       return;
     }
 
@@ -1222,13 +1222,17 @@ function isOwnerRequest(request) {
   return Boolean(adminKey && request.get("x-admin-key") === adminKey);
 }
 
-function isBotRequest(request) {
+function isBotRequest(request, guildId) {
   const token = cleanEnvValue(process.env.DISCORD_TOKEN);
-  const authorization = String(request.get("authorization") ?? "");
-  const expected = `Bot ${token}`;
-  if (!token || authorization.length !== expected.length) return false;
+  if (!token) return false;
+  const signature = String(request.get("x-bot-signature") ?? "");
+  const expected = crypto
+    .createHmac("sha256", token)
+    .update(`guild-settings:${guildId}`)
+    .digest("hex");
+  if (signature.length !== expected.length) return false;
 
-  return crypto.timingSafeEqual(Buffer.from(authorization), Buffer.from(expected));
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
 function mergeSettings(settings = {}, guildId = "") {
