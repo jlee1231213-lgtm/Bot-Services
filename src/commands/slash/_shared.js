@@ -2,6 +2,8 @@ import { EmbedBuilder } from "discord.js";
 import { getGuildSettings } from "../../store.js";
 
 export const brandColor = 0x5865f2;
+const remoteSettingsCache = new Map();
+const remoteSettingsCacheMs = 15_000;
 
 export function buildMessage(base, rows) {
   const details = rows
@@ -18,7 +20,7 @@ export function cleanPing(value) {
 }
 
 export async function standardEmbed(guildId, title, description) {
-  const settings = await getGuildSettings(guildId);
+  const settings = await getEffectiveGuildSettings(guildId);
   const template = getCommandTemplate(settings, title);
   const useTemplate = settings?.customEmbeds && template?.enabled !== false;
   const embedTitle = useTemplate ? template.title : settings?.customEmbeds ? settings.embedTitle : title;
@@ -49,7 +51,7 @@ export async function standardEmbed(guildId, title, description) {
 }
 
 export async function customEmbed(guildId, { title, description, color, footer, image, thumbnail, footerIcon }) {
-  const settings = await getGuildSettings(guildId);
+  const settings = await getEffectiveGuildSettings(guildId);
   const embed = new EmbedBuilder()
     .setColor(parseHexColor(color || settings?.embedColor) ?? brandColor)
     .setTitle(title)
@@ -66,6 +68,37 @@ export async function customEmbed(guildId, { title, description, color, footer, 
   if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
 
   return embed;
+}
+
+async function getEffectiveGuildSettings(guildId) {
+  const localSettings = await getGuildSettings(guildId);
+  const backendUrl = String(process.env.PUBLIC_BACKEND_URL ?? "").trim().replace(/\/$/, "");
+  const token = String(process.env.DISCORD_TOKEN ?? "").trim();
+  if (!backendUrl || !token || !guildId) return localSettings;
+
+  const cached = remoteSettingsCache.get(guildId);
+  if (cached?.expiresAt > Date.now()) return cached.settings;
+
+  try {
+    const response = await fetch(`${backendUrl}/api/bot/guilds/${encodeURIComponent(guildId)}/settings`, {
+      headers: { Authorization: `Bot ${token}` },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) {
+      throw new Error(`Dashboard settings request failed with ${response.status}`);
+    }
+
+    const data = await response.json();
+    const settings = data.settings ?? localSettings;
+    remoteSettingsCache.set(guildId, {
+      settings,
+      expiresAt: Date.now() + remoteSettingsCacheMs,
+    });
+    return settings;
+  } catch (error) {
+    console.warn(`Could not load dashboard settings for guild ${guildId}: ${error.message}`);
+    return localSettings;
+  }
 }
 
 function getCommandTemplate(settings, title) {
