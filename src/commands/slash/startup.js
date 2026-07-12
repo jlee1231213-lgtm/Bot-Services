@@ -4,6 +4,14 @@ import { buildMessage, cleanPing, standardEmbed } from "./_shared.js";
 export const data = new SlashCommandBuilder()
   .setName("startup")
   .setDescription("Announce that a roleplay session is starting.")
+  .addIntegerOption((option) =>
+    option
+      .setName("reactions")
+      .setDescription("Amount of reactions needed to start the session.")
+      .setMinValue(1)
+      .setMaxValue(100)
+      .setRequired(true),
+  )
   .addStringOption((option) =>
     option.setName("server_name").setDescription("Name of the server or session.").setRequired(false),
   )
@@ -24,7 +32,9 @@ export async function execute(interaction) {
   await interaction.deferReply();
 
   const ping = cleanPing(interaction.options.getString("ping"));
+  const reactionsRequired = interaction.options.getInteger("reactions", true);
   const description = buildMessage("A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.", [
+    ["Reactions Required", reactionsRequired.toString()],
     ["Server", interaction.options.getString("server_name")],
     ["Code", interaction.options.getString("server_code")],
     ["Host", interaction.options.getString("host")],
