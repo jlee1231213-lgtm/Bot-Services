@@ -5,6 +5,15 @@ import { getGuildSettings } from "../../store.js";
 export const brandColor = 0x5865f2;
 const remoteSettingsCache = new Map();
 const remoteSettingsCacheMs = 15_000;
+const defaultStartupTemplate = {
+  title: "Session Startup",
+  message: "A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.",
+  color: "#5865f2",
+  footer: "Powered by Logic Systems",
+  footerIcon: "",
+  image: "",
+  thumbnail: "",
+};
 
 export function buildMessage(base, rows) {
   const details = rows
@@ -23,9 +32,14 @@ export function cleanPing(value) {
 export async function standardEmbed(guildId, title, description) {
   const settings = await getEffectiveGuildSettings(guildId);
   const template = getCommandTemplate(settings, title);
-  const useTemplate = settings?.customEmbeds && template?.enabled !== false;
+  const useGlobalStartup = shouldUseGlobalStartupSettings(settings, title, template);
+  const useTemplate = settings?.customEmbeds && template?.enabled !== false && !useGlobalStartup;
   const embedTitle = useTemplate ? template.title : settings?.customEmbeds ? settings.embedTitle : title;
-  const embedDescription = buildTemplateDescription(useTemplate ? template.message : settings?.customEmbeds ? settings.embedMessage : description, description);
+  const embedDescription = buildTemplateDescription(
+    useTemplate ? template.message : settings?.customEmbeds ? settings.embedMessage : description,
+    description,
+    title,
+  );
   const embedFooter = useTemplate ? template.footer : settings?.footerText;
   const embedFooterIcon = useTemplate ? template.footerIcon : settings?.footerIcon;
   const embedColor = useTemplate ? template.color : settings?.embedColor;
@@ -111,11 +125,31 @@ function getCommandTemplate(settings, title) {
   return key ? settings?.commandTemplates?.[key] : null;
 }
 
-function buildTemplateDescription(templateMessage, commandDetails) {
+function shouldUseGlobalStartupSettings(settings, title, template) {
+  if (!settings?.customEmbeds || title !== "Session Startup" || !template) return false;
+
+  const templateWasCustomized = Object.entries(defaultStartupTemplate).some(
+    ([key, defaultValue]) => String(template[key] ?? "") !== defaultValue,
+  );
+  return !templateWasCustomized;
+}
+
+function buildTemplateDescription(templateMessage, commandDetails, title) {
   if (!templateMessage) return commandDetails;
   if (!commandDetails || commandDetails === templateMessage) return templateMessage;
+
+  const defaultBase = commandDefaultDescriptions[title];
+  if (defaultBase && commandDetails.startsWith(defaultBase)) {
+    const extraDetails = commandDetails.slice(defaultBase.length).trim();
+    return extraDetails ? `${templateMessage}\n\n${extraDetails}` : templateMessage;
+  }
+
   return `${templateMessage}\n\n${commandDetails}`;
 }
+
+const commandDefaultDescriptions = {
+  "Session Startup": defaultStartupTemplate.message,
+};
 
 const commandTemplateKeys = {
   "Session Startup": "startup",
