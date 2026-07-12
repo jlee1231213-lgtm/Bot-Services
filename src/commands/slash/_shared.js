@@ -101,7 +101,7 @@ async function getEffectiveGuildSettings(guildId) {
       .digest("hex");
     const response = await fetch(`${backendUrl}/api/bot/guilds/${encodeURIComponent(guildId)}/settings`, {
       headers: { "x-bot-signature": signature },
-      signal: AbortSignal.timeout(5_000),
+      signal: AbortSignal.timeout(2_200),
     });
     if (!response.ok) {
       throw new Error(`Dashboard settings request failed with ${response.status}`);

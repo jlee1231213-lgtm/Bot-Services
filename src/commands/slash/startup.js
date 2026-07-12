@@ -21,6 +21,8 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction) {
+  await interaction.deferReply();
+
   const ping = cleanPing(interaction.options.getString("ping"));
   const description = buildMessage("A session startup has been posted. Join quickly, listen to staff, and keep the roleplay realistic.", [
     ["Server", interaction.options.getString("server_name")],
@@ -29,5 +31,5 @@ export async function execute(interaction) {
     ["Notes", interaction.options.getString("notes")],
   ]);
 
-  await interaction.reply({ content: ping ?? undefined, embeds: [await standardEmbed(interaction.guildId, "Session Startup", description)] });
+  await interaction.editReply({ content: ping ?? undefined, embeds: [await standardEmbed(interaction.guildId, "Session Startup", description)] });
 }
